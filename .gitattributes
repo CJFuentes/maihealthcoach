@@ -1,0 +1,52 @@
+# Normalize line endings: all text files use LF in the repo; git converts to
+# CRLF on Windows checkouts automatically.
+* text=auto eol=lf
+
+# Explicitly mark binary files so git never mangles them.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.xcarchive binary
+*.ipa  binary
+*.apk  binary
+*.aab  binary
+
+# C# / .NET
+*.cs   text eol=lf
+*.csproj text eol=lf
+*.sln  text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+
+# Web
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+
+# Swift / Xcode
+*.swift text eol=lf
+*.pbxproj text eol=lf merge=union
+*.xcworkspace text eol=lf
+
+# Kotlin / Android
+*.kt   text eol=lf
+*.kts  text eol=lf
+*.gradle text eol=lf
+*.xml  text eol=lf
+
+# Config / Docs
+*.md   text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.toml text eol=lf
+*.sh   text eol=lf
+Dockerfile text eol=lf
+Containerfile text eol=lf

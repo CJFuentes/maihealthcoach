@@ -1,5 +1,6 @@
 using System.Reflection;
 using Asp.Versioning;
+using MAIHealthCoach.Api.Features.Profile;
 using MAIHealthCoach.Api.Middleware;
 using MAIHealthCoach.Application;
 using MAIHealthCoach.Infrastructure;
@@ -171,6 +172,9 @@ try
     })
     .WithName("GetCurrentUser")
     .RequireAuthorization();
+
+    // User profile endpoints (issue #16): authenticated GET/PUT /api/v1/me/profile.
+    v1.MapProfileEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

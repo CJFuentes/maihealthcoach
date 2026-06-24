@@ -1,18 +1,36 @@
 import { API_BASE_URL } from '../env';
 
 /**
+ * RFC 7807 ProblemDetails body returned by the backend on validation failures.
+ *
+ * `errors` maps each invalid field (camelCase, matching the request body key)
+ * to its list of human-readable messages, so callers can surface them inline.
+ */
+export interface ProblemDetails {
+  title?: string;
+  detail?: string;
+  status?: number;
+  errors?: Record<string, string[]>;
+}
+
+/**
  * Error thrown when the API responds with a non-2xx status.
  *
  * Carries the HTTP `status` so callers can branch on it (e.g. 401 → sign out,
- * 404 → not found) without parsing the message string.
+ * 404 → not found) without parsing the message string. When the response body
+ * is a parseable JSON object it is exposed as {@link ProblemDetails} via
+ * `problem`, so callers can read `err.problem?.errors` to render field-level
+ * validation messages.
  */
 export class ApiError extends Error {
   readonly status: number;
+  readonly problem?: ProblemDetails;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, problem?: ProblemDetails) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.problem = problem;
   }
 }
 
@@ -43,7 +61,9 @@ export function setTokenProvider(provider: TokenProvider): void {
  *   an `Authorization: Bearer <token>` header when present.
  * - Prefixes `path` with {@link API_BASE_URL} (empty in dev, so the Vite proxy
  *   handles `/api/*`).
- * - Throws {@link ApiError} on a non-2xx response.
+ * - Throws {@link ApiError} on a non-2xx response, attaching any parsed
+ *   {@link ProblemDetails} body so callers can read field-level validation
+ *   errors via `err.problem?.errors`.
  *
  * @typeParam T - The expected shape of the parsed JSON response.
  */
@@ -63,7 +83,23 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const response = await fetch(url, { ...init, headers });
 
   if (!response.ok) {
-    throw new ApiError(response.status, `Request to ${path} failed with status ${response.status}`);
+    // Some error responses have an empty or non-JSON body (e.g. 401/502), so
+    // parsing is best-effort and must never mask the original HTTP error.
+    let problem: ProblemDetails | undefined;
+    try {
+      const body: unknown = await response.json();
+      if (body && typeof body === 'object') {
+        problem = body as ProblemDetails;
+      }
+    } catch {
+      problem = undefined;
+    }
+
+    throw new ApiError(
+      response.status,
+      `Request to ${path} failed with status ${response.status}`,
+      problem,
+    );
   }
 
   return (await response.json()) as T;

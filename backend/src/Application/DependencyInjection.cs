@@ -1,3 +1,4 @@
+using MAIHealthCoach.Application.Goals;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MAIHealthCoach.Application;
@@ -9,8 +10,10 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Placeholder: CQRS handlers, validators, and mapping profiles
-        // will be registered here in later milestones.
+        // GoalsCalculator is stateless and dependency-free — a singleton avoids
+        // repeated allocations per request (issue #17).
+        services.AddSingleton<GoalsCalculator>();
+
         return services;
     }
 }

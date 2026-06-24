@@ -1,3 +1,4 @@
+using MAIHealthCoach.Domain.Goals;
 using MAIHealthCoach.Domain.UserProfiles;
 using MAIHealthCoach.Domain.Users;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,9 @@ public sealed class AppDbContext : DbContext
 
     /// <summary>Body weight measurement history (issue #16).</summary>
     public DbSet<WeightMeasurement> WeightMeasurements => Set<WeightMeasurement>();
+
+    /// <summary>Manual goal-target overrides per user (issue #17).</summary>
+    public DbSet<UserGoalTargets> UserGoalTargets => Set<UserGoalTargets>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

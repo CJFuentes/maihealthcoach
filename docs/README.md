@@ -8,9 +8,11 @@ Architecture Decision Records (ADRs), and API documentation.
 | File / Folder       | Purpose                                               |
 |---------------------|-------------------------------------------------------|
 | `architecture.md`   | Canonical system architecture diagram (mirrored in root README) |
+| `coaching-safety-guardrails.md` | AI coaching safety policy: prohibited topics, disclaimers, risk categories, red-team prompts |
 | `adr/`              | Architecture Decision Records                         |
 | `adr/template.md`   | ADR template                                          |
 | `adr/ADR-001-auth-clerk.md` | First ADR (auth approach — Clerk)             |
+| `adr/ADR-003-coaching-safety-guardrails.md` | ADR: coaching guardrail architecture (spike #41) |
 
 ## Architecture Diagram
 

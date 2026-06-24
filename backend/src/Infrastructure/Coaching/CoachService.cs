@@ -33,6 +33,10 @@ internal sealed class CoachService : ICoachService
     private readonly CoachPromptBuilder _promptBuilder;
     private readonly ILogger<CoachService> _logger;
 
+    // Deterministic pre-screen for red-flag input. Stateless and self-contained, so it is
+    // constructed directly rather than injected — no DI registration is required.
+    private readonly CoachInputRiskClassifier _riskClassifier = new();
+
     public CoachService(
         AnthropicMessagesClient client,
         IOptions<AiOptions> aiOptions,
@@ -59,12 +63,26 @@ internal sealed class CoachService : ICoachService
             return CoachResult.Failure(CoachErrorCategory.ConfigurationError, FallbackConfigError);
         }
 
-        // 2. Model selection.
+        // 2. Risk classification — a deterministic pre-screen before any prompt is built or sent.
+        var riskLevel = _riskClassifier.Classify(request.UserMessage);
+        if (riskLevel == InputRiskLevel.High)
+        {
+            // Short-circuit: high-risk input is answered by the guardrail layer, not the model.
+            // No message content is logged — only the interception event.
+            _logger.LogWarning(
+                "CoachService intercepted a high-risk input; returning the safety redirect without calling the model.");
+            return CoachResult.Success(
+                CoachSafetyResponder.HighRiskRedirectText,
+                CoachSafetyResponder.GuardrailModelSentinel,
+                disclaimer: CoachPromptBuilder.SafetyDisclaimer);
+        }
+
+        // 3. Model selection.
         var modelId = request.ModelTier == CoachModelTier.Escalation
             ? options.EscalationModel
             : options.DefaultModel;
 
-        // 3. Build the prompt and user content.
+        // 4. Build the prompt and user content.
         var systemPrompt = _promptBuilder.BuildSystemPrompt();
         var userContent = _promptBuilder.BuildUserContent(request.UserMessage, request.Context);
 
@@ -76,7 +94,7 @@ internal sealed class CoachService : ICoachService
             Messages = [new AnthropicMessage { Role = "user", Content = userContent }],
         };
 
-        // 4. Send and map.
+        // 5. Send and map.
         var result = await _client.SendAsync(anthropicRequest, cancellationToken);
         if (!result.IsSuccess)
         {
@@ -92,7 +110,13 @@ internal sealed class CoachService : ICoachService
             return CoachResult.Failure(CoachErrorCategory.ParseError, FallbackParse);
         }
 
-        return CoachResult.Success(text, result.Response!.Model ?? modelId);
+        // 6. For elevated-risk input, append the safety note to the reply (single channel).
+        if (riskLevel == InputRiskLevel.Elevated)
+        {
+            text += Environment.NewLine + CoachSafetyResponder.ElevatedRiskSafetyNote;
+        }
+
+        return CoachResult.Success(text, result.Response!.Model ?? modelId, CoachPromptBuilder.SafetyDisclaimer);
     }
 
     private static string MapFallback(CoachErrorCategory category) => category switch

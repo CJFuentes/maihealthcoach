@@ -1,6 +1,7 @@
 using MAIHealthCoach.Application.Coaching;
 using MAIHealthCoach.Application.Goals;
 using MAIHealthCoach.Application.MealSuggestions;
+using MAIHealthCoach.Application.Nudges;
 using MAIHealthCoach.Domain.UserProfiles;
 using MAIHealthCoach.Infrastructure.Auth;
 using MAIHealthCoach.Infrastructure.Persistence;
@@ -12,6 +13,7 @@ namespace MAIHealthCoach.Api.Features.Coach;
 /// Registers the MAI coach endpoints on the supplied versioned route builder.
 /// <list type="bullet">
 ///   <item><description><c>GET /me/coach/meal-suggestions</c> — suggest meals that fit the user's remaining nutrition budget and dietary preferences (issue #37).</description></item>
+///   <item><description><c>GET /me/coach/nudge</c> — return a short, personalised motivational nudge based on optional streak/adherence signals (issue #38).</description></item>
 /// </list>
 /// Goals are recomputed from the profile per request (computation-first); any stored overrides are
 /// layered on top before the remaining budget is derived.
@@ -24,6 +26,9 @@ internal static class CoachEndpoints
 
         coach.MapGet("/meal-suggestions", GetMealSuggestionsAsync)
             .WithName("GetMealSuggestions");
+
+        coach.MapGet("/nudge", GetNudgeAsync)
+            .WithName("GetNudge");
 
         return group;
     }
@@ -69,6 +74,95 @@ internal static class CoachEndpoints
         }
 
         return Results.Ok(MapToResponse(result));
+    }
+
+    // ── GET /api/v1/me/coach/nudge ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a short, personalised motivational nudge (issue #38). The <paramref name="streakDays"/>
+    /// and <paramref name="adherencePercent"/> query parameters are the optional integration seam for
+    /// the streaks/adherence tracking work (issues #44/#42); when omitted, the nudge service produces
+    /// general encouragement.
+    /// </summary>
+    /// <remarks>
+    /// Unlike the meal-suggestions endpoint, a missing or incomplete profile is <em>not</em> an error
+    /// here: rather than returning 404/409, this endpoint requests a generic encouraging nudge so the
+    /// user always receives a friendly message (the chosen friendlier behaviour). It still requires
+    /// authentication — callers without a token receive 401.
+    /// </remarks>
+    private static async Task<IResult> GetNudgeAsync(
+        decimal? adherencePercent,
+        int? streakDays,
+        ICurrentUserService currentUser,
+        AppDbContext db,
+        GoalsCalculator calculator,
+        INudgeService nudgeService,
+        CancellationToken ct)
+    {
+        if (adherencePercent is < 0 or > 100)
+        {
+            return Results.Problem(
+                title: "Invalid parameter.",
+                detail: "adherencePercent must be between 0 and 100.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        if (streakDays is < 0)
+        {
+            return Results.Problem(
+                title: "Invalid parameter.",
+                detail: "streakDays must be a non-negative integer.",
+                statusCode: StatusCodes.Status400BadRequest);
+        }
+
+        var user = await currentUser.GetOrCreateCurrentUserAsync(ct);
+
+        var profile = await db.UserProfiles
+            .Include(p => p.WeightMeasurements)
+            .FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
+
+        NudgeRequest nudgeRequest;
+
+        if (BuildCalculatorInput(profile) is { } input)
+        {
+            // Complete profile — compute goals and build a context-rich nudge request.
+            var computed = calculator.Compute(input);
+
+            var overrides = await db.UserGoalTargets
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.UserId == user.Id, ct);
+
+            nudgeRequest = new NudgeRequest(
+                CurrentStreakDays: streakDays,
+                TodayAdherencePercent: adherencePercent,
+                HasProfile: true,
+                PrimaryGoal: input.PrimaryGoal.ToString(),
+                DailyCalorieTarget: overrides?.CaloriesKcal ?? computed.CaloriesKcal,
+                DailyProteinTargetGrams: overrides?.ProteinGrams ?? computed.ProteinGrams,
+                ActivityLevel: input.ActivityLevel.ToString(),
+                DietaryPreferences: FormatDietaryText(profile!.DietaryPreferences));
+        }
+        else
+        {
+            // Missing/incomplete profile — request a generic encouraging nudge (friendlier behaviour),
+            // still passing any optional streak/adherence signals.
+            nudgeRequest = new NudgeRequest(
+                CurrentStreakDays: streakDays,
+                TodayAdherencePercent: adherencePercent,
+                HasProfile: false);
+        }
+
+        var result = await nudgeService.GetNudgeAsync(nudgeRequest, ct);
+
+        if (!result.IsSuccess)
+        {
+            return MapNudgeFailure(result);
+        }
+
+        return Results.Ok(new NudgeResponse(
+            result.Nudge!.Message,
+            result.Nudge.Tone,
+            result.Disclaimer));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -174,4 +268,42 @@ internal static class CoachEndpoints
                 title: "Coaching service unavailable.",
                 detail: result.FallbackMessage,
                 statusCode: StatusCodes.Status502BadGateway);
+
+    private static IResult MapNudgeFailure(NudgeResult result) =>
+        result.ErrorCategory == CoachErrorCategory.ConfigurationError
+            ? Results.Problem(
+                title: "Coaching service not configured.",
+                detail: result.FallbackMessage,
+                statusCode: StatusCodes.Status503ServiceUnavailable)
+            : Results.Problem(
+                title: "Coaching service unavailable.",
+                detail: result.FallbackMessage,
+                statusCode: StatusCodes.Status502BadGateway);
+
+    /// <summary>
+    /// Collapses the structured dietary preferences into a single free-text constraint string, or
+    /// <see langword="null"/> when nothing meaningful is recorded (DietType.None and no allergies).
+    /// Mirrors the formatting in <see cref="RemainingBudgetCalculator"/>.
+    /// </summary>
+    private static string? FormatDietaryText(DietaryPreferences? preferences)
+    {
+        if (preferences is null)
+        {
+            return null;
+        }
+
+        var parts = new List<string>();
+
+        if (preferences.DietType.HasValue && preferences.DietType.Value != DietType.None)
+        {
+            parts.Add(preferences.DietType.Value.ToString());
+        }
+
+        if (!string.IsNullOrWhiteSpace(preferences.Allergies))
+        {
+            parts.Add($"allergies: {preferences.Allergies}");
+        }
+
+        return parts.Count > 0 ? string.Join(", ", parts) : null;
+    }
 }

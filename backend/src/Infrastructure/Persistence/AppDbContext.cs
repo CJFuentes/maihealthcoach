@@ -42,6 +42,9 @@ public sealed class AppDbContext : DbContext
     /// <summary>Food diary log entries, one per logged food per meal per day (issue #22).</summary>
     public DbSet<DiaryEntry> DiaryEntries => Set<DiaryEntry>();
 
+    /// <summary>User-to-food "favorite" markers for quick re-logging (issue #24).</summary>
+    public DbSet<UserFavoriteFood> UserFavoriteFoods => Set<UserFavoriteFood>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -23,6 +23,15 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Integration tests share a process-global resource (the static Serilog logger
+         configured in Program.cs, torn down via Log.CloseAndFlushAsync in the host's
+         finally block). Running WebApplicationFactory collections in parallel lets one
+         host's teardown close the logger out from under another host that is still
+         starting, which surfaces as "entry point exited without ever building an IHost".
+         Serialize test collections to keep the shared host lifecycle deterministic. -->
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Api\MAIHealthCoach.Api.csproj" />
     <!-- Direct reference makes EF Core / Npgsql types available for the persistence
          wiring tests and surfaces Infrastructure internals via InternalsVisibleTo. -->

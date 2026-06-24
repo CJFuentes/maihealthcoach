@@ -178,7 +178,11 @@ cd android
 
 ```bash
 cd deploy
-podman compose -f compose.local.yaml up
+cp .env.example .env          # first time only — edit credentials if desired
+podman compose up             # reads compose.yml automatically
+# or: docker compose up
+# API:    http://localhost:8080
+# Health: http://localhost:8080/healthz
 ```
 
 ---

@@ -1,5 +1,6 @@
 using System.Reflection;
 using Asp.Versioning;
+using MAIHealthCoach.Api.Features.Coach;
 using MAIHealthCoach.Api.Features.Goals;
 using MAIHealthCoach.Api.Features.Profile;
 using MAIHealthCoach.Api.Middleware;
@@ -180,6 +181,9 @@ try
     // Goals engine endpoints (issue #17): authenticated GET /api/v1/me/goals and
     // PUT /api/v1/me/goals/overrides.
     v1.MapGoalsEndpoints();
+
+    // MAI coach endpoints (issue #37): authenticated GET /api/v1/me/coach/meal-suggestions.
+    v1.MapCoachEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

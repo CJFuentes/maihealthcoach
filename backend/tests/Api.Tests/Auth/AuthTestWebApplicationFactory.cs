@@ -30,7 +30,7 @@ namespace MAIHealthCoach.Api.Tests.Auth;
 ///   </description></item>
 /// </list>
 /// </summary>
-public sealed class AuthTestWebApplicationFactory : WebApplicationFactory<Program>
+public class AuthTestWebApplicationFactory : WebApplicationFactory<Program>
 {
     // A single open connection keeps the SQLite in-memory database alive for the factory's
     // lifetime (the DB is dropped when the last connection closes).

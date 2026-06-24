@@ -143,6 +143,9 @@ public sealed class CoachPromptBuilder
         var hasGoalSection = context.PrimaryGoal is not null
             || context.DailyCalorieTarget.HasValue
             || context.DailyProteinTargetGrams.HasValue
+            || context.DailyCarbohydrateTargetGrams.HasValue
+            || context.DailyFatTargetGrams.HasValue
+            || context.DailyWaterTargetMl.HasValue
             || context.ActivityLevel is not null;
 
         if (hasGoalSection)
@@ -167,10 +170,28 @@ public sealed class CoachPromptBuilder
             {
                 sb.AppendLine($"- Daily protein target: {context.DailyProteinTargetGrams} g");
             }
+
+            if (context.DailyCarbohydrateTargetGrams.HasValue)
+            {
+                sb.AppendLine($"- Daily carbohydrate target: {context.DailyCarbohydrateTargetGrams} g");
+            }
+
+            if (context.DailyFatTargetGrams.HasValue)
+            {
+                sb.AppendLine($"- Daily fat target: {context.DailyFatTargetGrams} g");
+            }
+
+            if (context.DailyWaterTargetMl.HasValue)
+            {
+                sb.AppendLine($"- Daily water target: {context.DailyWaterTargetMl} ml");
+            }
         }
 
         var hasIntakeSection = context.TodayCaloriesConsumed.HasValue
-            || context.TodayProteinConsumedGrams.HasValue;
+            || context.TodayProteinConsumedGrams.HasValue
+            || context.TodayCarbsConsumedGrams.HasValue
+            || context.TodayFatConsumedGrams.HasValue
+            || context.TodayWaterConsumedMl.HasValue;
 
         if (hasIntakeSection)
         {
@@ -183,6 +204,21 @@ public sealed class CoachPromptBuilder
             if (context.TodayProteinConsumedGrams.HasValue)
             {
                 sb.AppendLine($"- Protein consumed: {context.TodayProteinConsumedGrams} g");
+            }
+
+            if (context.TodayCarbsConsumedGrams.HasValue)
+            {
+                sb.AppendLine($"- Carbohydrates consumed: {context.TodayCarbsConsumedGrams} g");
+            }
+
+            if (context.TodayFatConsumedGrams.HasValue)
+            {
+                sb.AppendLine($"- Fat consumed: {context.TodayFatConsumedGrams} g");
+            }
+
+            if (context.TodayWaterConsumedMl.HasValue)
+            {
+                sb.AppendLine($"- Water consumed: {context.TodayWaterConsumedMl} ml");
             }
         }
 

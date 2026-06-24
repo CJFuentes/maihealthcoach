@@ -22,6 +22,12 @@ namespace MAIHealthCoach.Application.Coaching;
 /// <param name="ActivityLevel">
 /// The user's activity level description (e.g. "Moderately active"). Used for context.
 /// </param>
+/// <param name="DailyCarbohydrateTargetGrams">Daily carbohydrate target in grams, if known. Populated by #37.</param>
+/// <param name="DailyFatTargetGrams">Daily fat target in grams, if known. Populated by #37.</param>
+/// <param name="DailyWaterTargetMl">Daily water target in millilitres, if known. Populated by #37.</param>
+/// <param name="TodayCarbsConsumedGrams">Carbohydrates consumed today in grams. Populated by #37.</param>
+/// <param name="TodayFatConsumedGrams">Fat consumed today in grams. Populated by #37.</param>
+/// <param name="TodayWaterConsumedMl">Water consumed today in millilitres. Populated by #37.</param>
 public sealed record CoachingContext(
     string? PrimaryGoal = null,
     int? DailyCalorieTarget = null,
@@ -29,7 +35,13 @@ public sealed record CoachingContext(
     int? TodayCaloriesConsumed = null,
     int? TodayProteinConsumedGrams = null,
     string? DietaryPreferences = null,
-    string? ActivityLevel = null)
+    string? ActivityLevel = null,
+    int? DailyCarbohydrateTargetGrams = null,
+    int? DailyFatTargetGrams = null,
+    int? DailyWaterTargetMl = null,
+    int? TodayCarbsConsumedGrams = null,
+    int? TodayFatConsumedGrams = null,
+    int? TodayWaterConsumedMl = null)
 {
     /// <summary>An empty context with no fields populated. Use when no context is available.</summary>
     public static readonly CoachingContext Empty = new();

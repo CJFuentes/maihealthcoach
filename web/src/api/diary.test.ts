@@ -27,8 +27,7 @@ const sampleEntry: DiaryEntry = {
   mealType: 'Lunch',
   date: '2026-06-24',
   quantity: 1,
-  servingSizeId: 'serving-1',
-  servingSizeLabel: '100 g',
+  servingLabel: '100 g',
   nutrition: { calories: 165, proteinGrams: 31 },
 };
 
@@ -63,7 +62,7 @@ describe('addDiaryEntry', () => {
       mealType: 'Lunch' as const,
       date: '2026-06-24',
       quantity: 1,
-      servingSizeId: 'serving-1',
+      servingLabel: '100 g',
     };
     const result = await addDiaryEntry(req);
 
@@ -133,9 +132,30 @@ describe('getDailySummary', () => {
 });
 
 describe('scaleNutrition', () => {
-  it('scales present fields and omits absent ones', () => {
-    const result = scaleNutrition({ calories: 165, proteinGrams: 31 }, 1.5);
+  it('scales per-100 g nutrition by serving grams and quantity', () => {
+    // 100 g serving × 1.5 of a food at 110 kcal / 20.7 g protein per 100 g.
+    const result = scaleNutrition(
+      { energyKcal: 110, proteinG: 20.7, carbohydrateG: 0, fatG: 2.6 },
+      100,
+      1.5,
+    );
 
-    expect(result).toEqual({ calories: 248, proteinGrams: 46.5 });
+    expect(result).toEqual({
+      calories: 165,
+      proteinGrams: 31.1,
+      carbohydrateGrams: 0,
+      fatGrams: 3.9,
+    });
+  });
+
+  it('accounts for serving weight when it differs from 100 g', () => {
+    // One 30 g serving of a 400 kcal / 100 g food = 120 kcal.
+    const result = scaleNutrition(
+      { energyKcal: 400, proteinG: 10, carbohydrateG: 60, fatG: 15 },
+      30,
+      1,
+    );
+
+    expect(result.calories).toBe(120);
   });
 });

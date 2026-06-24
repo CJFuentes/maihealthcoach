@@ -1,21 +1,29 @@
 import { apiFetch } from './client';
-import type { FoodNutrition } from './foods';
+import type { NutritionPer100g } from './foods';
 
 /** Which meal a diary entry belongs to. */
 export type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 
 /**
- * Nutrition for a logged diary entry — identical in shape to
- * {@link FoodNutrition} (calories required, the rest optional).
+ * Nutrition for a logged diary entry (calories required, the rest optional).
+ *
+ * This is the diary/summary projection — distinct from a food's
+ * {@link NutritionPer100g}, which is the raw per-100 g reference the diary
+ * scales from. The macro fields use the diary backend's `…Grams` naming.
  */
-export type EntryNutrition = FoodNutrition;
+export interface EntryNutrition {
+  calories: number;
+  proteinGrams?: number;
+  carbohydrateGrams?: number;
+  fatGrams?: number;
+}
 
 /**
  * A single logged food in the diary.
  *
  * `nutrition` is the scaled nutrition for the chosen quantity/serving and may
- * be absent when the backend has not computed it; `quantity` is the multiplier
- * applied to the serving identified by `servingSizeId`.
+ * be absent when the backend has not computed it; `quantity` is the number of
+ * servings of `servingLabel` (or of 100 g when no named serving was chosen).
  */
 export interface DiaryEntry {
   id: string;
@@ -25,8 +33,7 @@ export interface DiaryEntry {
   mealType: MealType;
   date: string;
   quantity: number;
-  servingSizeId?: string;
-  servingSizeLabel?: string;
+  servingLabel?: string;
   nutrition?: EntryNutrition;
   loggedAt?: string;
 }
@@ -41,13 +48,19 @@ export interface DiaryResponse {
   meals: Partial<Record<MealType, DiaryEntry[]>>;
 }
 
-/** Body for `POST /api/v1/me/diary` to log a new entry. */
+/**
+ * Body for `POST /api/v1/me/diary` to log a new entry.
+ *
+ * `servingLabel` is the label of the chosen {@link import('./foods').ServingSize}
+ * (foods identify servings by label/grams, not by id); omit it to log a raw
+ * 100 g quantity.
+ */
 export interface AddDiaryEntryRequest {
   foodId: string;
   mealType: MealType;
   date: string;
   quantity: number;
-  servingSizeId?: string;
+  servingLabel?: string;
 }
 
 /**
@@ -58,7 +71,7 @@ export interface AddDiaryEntryRequest {
 export interface UpdateDiaryEntryRequest {
   mealType?: MealType;
   quantity?: number;
-  servingSizeId?: string;
+  servingLabel?: string;
 }
 
 /**
@@ -134,29 +147,33 @@ export async function getDailySummary(date: string): Promise<DailySummary> {
 }
 
 /**
- * Scales a food's base nutrition by a quantity multiplier.
+ * Computes the {@link EntryNutrition} for a portion of a food.
  *
- * Calories are rounded to the nearest integer; every other present field is
- * rounded to one decimal place. Fields absent from `base` are omitted from the
- * result (no spurious zeros). Calories are always present, defaulting to 0.
+ * A food's {@link NutritionPer100g} is scaled by the total grams consumed —
+ * `gramsPerServing × quantity` — so a 1.5 × "1 pot" (170 g) portion of a food
+ * uses 255 g of its per-100 g figures. Calories are rounded to the nearest
+ * integer; macros to one decimal place. Optional macros absent from `per100g`
+ * are omitted (no spurious zeros).
  *
- * @param base - Per-serving nutrition to scale.
- * @param quantity - Multiplier (e.g. 1.5 servings).
+ * @param per100g - The food's reference nutrition per 100 g.
+ * @param gramsPerServing - Weight in grams of one serving (use 100 for a raw
+ *   "per 100 g" portion).
+ * @param quantity - Number of servings (e.g. 1.5).
  */
-export function scaleNutrition(base: FoodNutrition, quantity: number): EntryNutrition {
+export function scaleNutrition(
+  per100g: NutritionPer100g,
+  gramsPerServing: number,
+  quantity: number,
+): EntryNutrition {
   const round1 = (value: number): number => Math.round(value * 10) / 10;
+  const factor = (gramsPerServing * quantity) / 100;
 
   const scaled: EntryNutrition = {
-    calories: Math.round((base.calories ?? 0) * quantity),
+    calories: Math.round(per100g.energyKcal * factor),
+    proteinGrams: round1(per100g.proteinG * factor),
+    carbohydrateGrams: round1(per100g.carbohydrateG * factor),
+    fatGrams: round1(per100g.fatG * factor),
   };
-
-  if (base.proteinGrams !== undefined) scaled.proteinGrams = round1(base.proteinGrams * quantity);
-  if (base.carbohydrateGrams !== undefined)
-    scaled.carbohydrateGrams = round1(base.carbohydrateGrams * quantity);
-  if (base.fatGrams !== undefined) scaled.fatGrams = round1(base.fatGrams * quantity);
-  if (base.fibreGrams !== undefined) scaled.fibreGrams = round1(base.fibreGrams * quantity);
-  if (base.sugarGrams !== undefined) scaled.sugarGrams = round1(base.sugarGrams * quantity);
-  if (base.sodiumMg !== undefined) scaled.sodiumMg = round1(base.sodiumMg * quantity);
 
   return scaled;
 }

@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { searchFoods, type Food } from '../../api/foods';
+import { searchFoods, type FoodDto } from '../../api/foods';
 
 /** Props for {@link FoodSearchPanel}. */
 interface FoodSearchPanelProps {
-  onSelect: (food: Food) => void;
+  onSelect: (food: FoodDto) => void;
 }
 
 type SearchStatus =
   | { state: 'idle' }
   | { state: 'searching' }
-  | { state: 'results'; items: Food[] }
+  | { state: 'results'; items: FoodDto[] }
   | { state: 'empty' }
   | { state: 'error'; message: string };
 
@@ -19,8 +19,8 @@ const MIN_QUERY_LENGTH = 2;
 const DEBOUNCE_MS = 350;
 
 /**
- * Debounced food search: a search input plus a results listbox. Selecting a
- * result hands the full {@link Food} back to the parent.
+ * Debounced food search: a search input plus a results list. Selecting a
+ * result hands the full {@link FoodDto} back to the parent.
  */
 export default function FoodSearchPanel({ onSelect }: FoodSearchPanelProps) {
   const [query, setQuery] = useState('');
@@ -86,7 +86,7 @@ export default function FoodSearchPanel({ onSelect }: FoodSearchPanelProps) {
                 <span className="food-result-name">{food.name}</span>
                 <span className="food-result-meta">
                   {food.brand ? `${food.brand} · ` : ''}
-                  {Math.round(food.nutrition.calories)} kcal
+                  {Math.round(food.nutritionPer100g.energyKcal)} kcal / 100 g
                 </span>
               </button>
             </li>

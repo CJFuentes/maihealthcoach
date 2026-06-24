@@ -16,8 +16,7 @@ const sampleEntry: DiaryEntry = {
   mealType: 'Lunch',
   date: '2026-06-24',
   quantity: 1,
-  servingSizeId: 'serving-1',
-  servingSizeLabel: '100 g',
+  servingLabel: '100 g',
   nutrition: { calories: 165, proteinGrams: 31 },
 };
 

@@ -6,15 +6,15 @@ import {
   type MealType,
   type UpdateDiaryEntryRequest,
 } from '../../api/diary';
-import type { Food } from '../../api/foods';
+import type { FoodDto } from '../../api/foods';
 
 /** Props for {@link EntryConfigPanel}. */
 interface EntryConfigPanelProps {
-  food: Food;
+  food: FoodDto;
   mode: 'add' | 'edit';
   initialMealType: MealType;
   initialQuantity?: number;
-  initialServingSizeId?: string;
+  initialServingLabel?: string;
   date: string;
   saving: boolean;
   submitError: string | null;
@@ -25,32 +25,37 @@ interface EntryConfigPanelProps {
 
 const MEAL_TYPES: MealType[] = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
-/**
- * Resolves the initial serving id, falling back gracefully when a previously
- * chosen serving is no longer offered by the food.
- */
-function resolveInitialServingId(
-  food: Food,
-  initialServingSizeId: string | undefined,
-): { id: string; staleLabel: string | null } {
-  const has = (id: string | undefined): boolean =>
-    id !== undefined && food.servingSizes.some((s) => s.id === id);
+/** Grams used when a food offers no named serving (raw "per 100 g" portion). */
+const PER_100G = 100;
 
-  if (has(initialServingSizeId)) {
-    return { id: initialServingSizeId as string, staleLabel: null };
+/**
+ * Resolves the initial serving label, falling back gracefully when a previously
+ * chosen serving is no longer offered by the food.
+ *
+ * Foods identify servings by label (there is no serving id), so selection and
+ * persistence are keyed on the label string.
+ */
+function resolveInitialServing(
+  food: FoodDto,
+  initialServingLabel: string | undefined,
+): { label: string; staleLabel: string | null } {
+  const has = (label: string | undefined): boolean =>
+    label !== undefined && food.servingSizes.some((s) => s.label === label);
+
+  if (has(initialServingLabel)) {
+    return { label: initialServingLabel as string, staleLabel: null };
   }
 
-  const fallback = has(food.defaultServingSizeId)
-    ? (food.defaultServingSizeId as string)
-    : (food.servingSizes[0]?.id ?? '');
+  const fallback = food.servingSizes[0]?.label ?? '';
 
   // Only flag staleness when the caller actually asked for a serving that has
   // since vanished — not on the add path where none was requested.
-  const stale = initialServingSizeId !== undefined && !has(initialServingSizeId);
-  const fallbackLabel =
-    food.servingSizes.find((s) => s.id === fallback)?.label ?? 'the default serving';
+  const stale = initialServingLabel !== undefined && !has(initialServingLabel);
 
-  return { id: fallback, staleLabel: stale ? fallbackLabel : null };
+  return {
+    label: fallback,
+    staleLabel: stale ? fallback || 'the default serving' : null,
+  };
 }
 
 /**
@@ -62,7 +67,7 @@ export default function EntryConfigPanel({
   mode,
   initialMealType,
   initialQuantity,
-  initialServingSizeId,
+  initialServingLabel,
   date,
   saving,
   submitError,
@@ -72,18 +77,18 @@ export default function EntryConfigPanel({
 }: EntryConfigPanelProps) {
   const [mealType, setMealType] = useState<MealType>(initialMealType);
   const [quantity, setQuantity] = useState<string>(String(initialQuantity ?? 1));
-  const initialServing = useState(() => resolveInitialServingId(food, initialServingSizeId))[0];
-  const [servingSizeId, setServingSizeId] = useState<string>(initialServing.id);
+  const initialServing = useState(() => resolveInitialServing(food, initialServingLabel))[0];
+  const [servingLabel, setServingLabel] = useState<string>(initialServing.label);
   const [localErrors, setLocalErrors] = useState<Record<string, string[]>>({});
 
   const mergedErrors: Record<string, string[]> = { ...fieldErrors, ...localErrors };
 
-  // Nutrition for the chosen serving, falling back to the food's base figures.
-  const serving = food.servingSizes.find((s) => s.id === servingSizeId);
-  const servingNutrition = serving?.nutrition ?? food.nutrition;
+  const hasServings = food.servingSizes.length > 0;
+  // Grams for the chosen serving; fall back to a raw 100 g portion.
+  const grams = food.servingSizes.find((s) => s.label === servingLabel)?.grams ?? PER_100G;
   const qty = Number(quantity);
   const preview: EntryNutrition | null =
-    Number.isFinite(qty) && qty > 0 ? scaleNutrition(servingNutrition, qty) : null;
+    Number.isFinite(qty) && qty > 0 ? scaleNutrition(food.nutritionPer100g, grams, qty) : null;
 
   function fieldError(key: string): ReactElement | null {
     const errors = mergedErrors[key];
@@ -111,10 +116,10 @@ export default function EntryConfigPanel({
         mealType,
         date,
         quantity: parsed,
-        servingSizeId: servingSizeId || undefined,
+        servingLabel: servingLabel || undefined,
       });
     } else {
-      onSubmit({ mealType, quantity: parsed, servingSizeId: servingSizeId || undefined });
+      onSubmit({ mealType, quantity: parsed, servingLabel: servingLabel || undefined });
     }
   }
 
@@ -123,7 +128,6 @@ export default function EntryConfigPanel({
     handleConfirm();
   }
 
-  const hasServings = food.servingSizes.length > 0;
   const previewValue = (value: number | undefined): string =>
     value === undefined ? '—' : String(Math.round(value));
 
@@ -161,18 +165,18 @@ export default function EntryConfigPanel({
         {hasServings ? (
           <select
             id="servingSize"
-            value={servingSizeId}
-            onChange={(e) => setServingSizeId(e.target.value)}
+            value={servingLabel}
+            onChange={(e) => setServingLabel(e.target.value)}
           >
             {food.servingSizes.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
+              <option key={s.label} value={s.label}>
+                {s.label} ({s.grams} g)
               </option>
             ))}
           </select>
         ) : (
           <select id="servingSize" disabled value="">
-            <option value="">1 serving</option>
+            <option value="">100 g</option>
           </select>
         )}
       </div>

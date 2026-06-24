@@ -31,7 +31,7 @@ export default function DiaryEntryRow({
         <span className="diary-entry-name">{entry.foodName}</span>
         {entry.brand && <span className="diary-entry-brand hint"> · {entry.brand}</span>}
         <span className="diary-entry-serving">
-          {entry.quantity} × {entry.servingSizeLabel ?? 'serving'}
+          {entry.quantity} × {entry.servingLabel ?? '100 g'}
         </span>
       </div>
 

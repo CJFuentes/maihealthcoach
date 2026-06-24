@@ -5,6 +5,7 @@ using MAIHealthCoach.Api.Features.Diary;
 using MAIHealthCoach.Api.Features.Foods;
 using MAIHealthCoach.Api.Features.Goals;
 using MAIHealthCoach.Api.Features.Profile;
+using MAIHealthCoach.Api.Features.Summary;
 using MAIHealthCoach.Api.Middleware;
 using MAIHealthCoach.Application;
 using MAIHealthCoach.Infrastructure;
@@ -194,6 +195,10 @@ try
     // Food diary endpoints (issue #22): authenticated POST /api/v1/me/diary,
     // GET /api/v1/me/diary?date=, PUT/DELETE /api/v1/me/diary/{id}.
     v1.MapDiaryEndpoints();
+
+    // Daily nutrition summary endpoint (issue #23): authenticated
+    // GET /api/v1/me/summary?date= — consumed vs goal targets for calories + macros.
+    v1.MapSummaryEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

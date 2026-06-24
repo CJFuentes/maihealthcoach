@@ -8,7 +8,7 @@ import {
   type MealType,
   type UpdateDiaryEntryRequest,
 } from '../../api/diary';
-import { getFood, type Food } from '../../api/foods';
+import { getFood, type FoodDto } from '../../api/foods';
 import EntryConfigPanel from './EntryConfigPanel';
 import FoodSearchPanel from './FoodSearchPanel';
 
@@ -28,7 +28,7 @@ interface AddEntryDialogProps {
 type FoodLoadStatus =
   | { state: 'idle' }
   | { state: 'loading' }
-  | { state: 'ready'; food: Food }
+  | { state: 'ready'; food: FoodDto }
   | { state: 'error'; message: string };
 
 /**
@@ -52,7 +52,7 @@ export default function AddEntryDialog({
   const [step, setStep] = useState<'search' | 'configure'>(
     mode.kind === 'edit' ? 'configure' : 'search',
   );
-  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
+  const [selectedFood, setSelectedFood] = useState<FoodDto | null>(null);
   const [foodStatus, setFoodStatus] = useState<FoodLoadStatus>({ state: 'idle' });
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -147,7 +147,7 @@ export default function AddEntryDialog({
           mode="edit"
           initialMealType={mode.entry.mealType}
           initialQuantity={mode.entry.quantity}
-          initialServingSizeId={mode.entry.servingSizeId}
+          initialServingLabel={mode.entry.servingLabel}
           date={date}
           saving={saving}
           submitError={submitError}

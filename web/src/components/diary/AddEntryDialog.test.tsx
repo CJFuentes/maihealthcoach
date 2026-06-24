@@ -5,22 +5,23 @@ import AddEntryDialog from './AddEntryDialog';
 import * as diaryApi from '../../api/diary';
 import * as foodsApi from '../../api/foods';
 import { ApiError } from '../../api/client';
-import type { Food } from '../../api/foods';
+import type { FoodDto } from '../../api/foods';
 import type { DiaryEntry } from '../../api/diary';
 
 vi.mock('../../api/diary');
 vi.mock('../../api/foods');
 
-const sampleFood: Food = {
+const sampleFood: FoodDto = {
   id: 'food-1',
   name: 'Greek Yogurt',
   brand: 'Fage',
-  nutrition: { calories: 120, proteinGrams: 18 },
+  barcode: null,
+  source: 'OpenFoodFacts',
+  nutritionPer100g: { energyKcal: 71, proteinG: 10, carbohydrateG: 4, fatG: 3.8 },
   servingSizes: [
-    { id: 'serving-1', label: '170 g pot', nutrition: { calories: 120, proteinGrams: 18 } },
-    { id: 'serving-2', label: '100 g', nutrition: { calories: 71, proteinGrams: 10 } },
+    { label: '170 g pot', grams: 170 },
+    { label: '100 g', grams: 100 },
   ],
-  defaultServingSizeId: 'serving-1',
 };
 
 const sampleEntry: DiaryEntry = {
@@ -30,9 +31,8 @@ const sampleEntry: DiaryEntry = {
   mealType: 'Lunch',
   date: '2026-06-24',
   quantity: 1,
-  servingSizeId: 'serving-1',
-  servingSizeLabel: '170 g pot',
-  nutrition: { calories: 120, proteinGrams: 18 },
+  servingLabel: '170 g pot',
+  nutrition: { calories: 121, proteinGrams: 17 },
 };
 
 /** A resolved entry the add/update calls return; the dialog only forwards it. */
@@ -92,7 +92,7 @@ describe('AddEntryDialog', () => {
       mealType: 'Breakfast',
       date: '2026-06-24',
       quantity: 2,
-      servingSizeId: 'serving-1',
+      servingLabel: '170 g pot',
     });
     expect(onSuccess).toHaveBeenCalledWith(savedEntry);
   });
@@ -127,7 +127,7 @@ describe('AddEntryDialog', () => {
     expect(diaryApi.updateDiaryEntry).toHaveBeenCalledWith('entry-9', {
       mealType: 'Lunch',
       quantity: 3,
-      servingSizeId: 'serving-1',
+      servingLabel: '170 g pot',
     });
     expect(onSuccess).toHaveBeenCalledWith(savedEntry);
   });

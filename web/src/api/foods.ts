@@ -1,76 +1,119 @@
-import { apiFetch } from './client';
+import { apiFetch, ApiError } from './client';
 
 /**
- * Nutrition figures for a food or serving.
+ * Macro- and micro-nutrient values for a food, expressed per 100 g.
  *
- * `calories` is always present; macro and micronutrient fields are optional
- * because the underlying food database does not provide every value for every
- * item.
+ * `energyKcal` and the three macros are always present; additional micros
+ * (fibre, sugars, sodium, …) are optional and keyed by their backend name.
  */
-export interface FoodNutrition {
-  calories: number;
-  proteinGrams?: number;
-  carbohydrateGrams?: number;
-  fatGrams?: number;
-  fibreGrams?: number;
-  sugarGrams?: number;
+export interface NutritionPer100g {
+  energyKcal: number;
+  proteinG: number;
+  carbohydrateG: number;
+  fatG: number;
+  fiberG?: number;
+  sugarsG?: number;
+  saturatedFatG?: number;
   sodiumMg?: number;
+  saltG?: number;
 }
 
-/**
- * A selectable portion of a food (e.g. "1 cup", "100 g").
- *
- * `weightGrams` is the portion's mass when known; `nutrition` is the food's
- * nutrition for one of this serving.
- */
+/** A named serving size and its weight in grams (e.g. "1 can" = 330 g). */
 export interface ServingSize {
-  id: string;
   label: string;
-  weightGrams?: number;
-  nutrition: FoodNutrition;
+  grams: number;
 }
 
 /**
- * A food in the database, with its base nutrition and available serving sizes.
+ * A food as returned by the backend food endpoints
+ * (`GET /api/v1/foods/barcode/{code}`, `GET /api/v1/foods?q=` and
+ * `GET /api/v1/foods/{id}`).
  *
- * `nutrition` is the per-default-serving baseline; `servingSizes` lists every
- * portion the user can pick. `defaultServingSizeId` points at the preferred
- * entry in `servingSizes` when set.
+ * `source` indicates the origin of the record (e.g. "OpenFoodFacts" or
+ * "Custom"). `barcode` is null for foods that were not matched by code.
  */
-export interface Food {
+export interface FoodDto {
   id: string;
   name: string;
-  brand?: string;
-  barcode?: string;
-  nutrition: FoodNutrition;
+  brand: string | null;
+  barcode: string | null;
+  source: string;
+  nutritionPer100g: NutritionPer100g;
   servingSizes: ServingSize[];
-  defaultServingSizeId?: string;
-  isFavourite?: boolean;
-  isCustom?: boolean;
-  createdAt?: string;
 }
 
 /**
- * Paged result of `GET /api/v1/foods`.
+ * A single page of food-search results from `GET /api/v1/foods?q=`.
  *
- * `items` is the current page of matches; `total`/`page`/`pageSize` are
- * pagination metadata when the backend supplies them.
+ * `items` is the page of matches; the optional paging fields are populated when
+ * the backend returns them (the diary UI only consumes `items` today).
  */
 export interface FoodSearchResponse {
-  items: Food[];
+  items: FoodDto[];
   total?: number;
   page?: number;
   pageSize?: number;
 }
 
 /**
- * Searches the food database for the given query.
+ * Thrown by {@link lookupBarcode} when the upstream Open Food Facts service is
+ * unavailable (HTTP 503). Distinct from a generic {@link ApiError} so the UI can
+ * render a dedicated "service unavailable, try again later" state rather than a
+ * generic failure.
+ */
+export class FoodServiceUnavailableError extends Error {
+  constructor(message = 'The food lookup service is temporarily unavailable.') {
+    super(message);
+    this.name = 'FoodServiceUnavailableError';
+  }
+}
+
+/**
+ * Normalises a raw barcode string for the lookup request.
  *
- * Throws {@link ApiError} on a non-2xx response so the caller can surface the
- * failure to the user.
+ * Strips whitespace and any non-digit characters (scanners and manual entry can
+ * include spaces or stray separators). EAN/UPC barcodes are purely numeric.
+ */
+export function normalizeBarcode(raw: string): string {
+  return raw.replace(/\D/g, '');
+}
+
+/**
+ * Looks up a packaged food by its EAN/UPC barcode.
  *
- * @param query - The free-text search term.
- * @param page - 1-based page number (defaults to the first page).
+ * - Returns the parsed {@link FoodDto} on 200.
+ * - Returns `null` when the backend responds 404 (no product matched the
+ *   barcode) so the UI can offer to create a custom food.
+ * - Throws {@link FoodServiceUnavailableError} on 503 (Open Food Facts upstream
+ *   unavailable) so the UI can show a distinct retry state.
+ * - Re-throws {@link ApiError} for any other non-2xx status.
+ *
+ * @param code - The barcode digits (already-decoded EAN/UPC). Non-digit
+ *   characters are stripped before the request is made.
+ */
+export async function lookupBarcode(code: string): Promise<FoodDto | null> {
+  const normalized = normalizeBarcode(code);
+
+  try {
+    return await apiFetch<FoodDto>(`/api/v1/foods/barcode/${encodeURIComponent(normalized)}`);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      if (error.status === 404) {
+        return null;
+      }
+      if (error.status === 503) {
+        throw new FoodServiceUnavailableError();
+      }
+    }
+    throw error;
+  }
+}
+
+/**
+ * Searches the food database by free-text query (`GET /api/v1/foods?q=`).
+ *
+ * Returns a {@link FoodSearchResponse}; throws {@link ApiError} on a non-2xx
+ * status so the caller can surface an error state. The query is URL-encoded.
  */
 export async function searchFoods(query: string, page = 1): Promise<FoodSearchResponse> {
   return apiFetch<FoodSearchResponse>(
@@ -79,10 +122,11 @@ export async function searchFoods(query: string, page = 1): Promise<FoodSearchRe
 }
 
 /**
- * Fetches a single food by id, including its serving sizes.
+ * Fetches a single food by id (`GET /api/v1/foods/{id}`).
  *
- * Throws {@link ApiError} with status 404 when the food no longer exists.
+ * Used by the diary edit flow to re-hydrate the full food (and its serving
+ * sizes) for an existing entry. Throws {@link ApiError} on a non-2xx status.
  */
-export async function getFood(id: string): Promise<Food> {
-  return apiFetch<Food>(`/api/v1/foods/${encodeURIComponent(id)}`);
+export async function getFood(id: string): Promise<FoodDto> {
+  return apiFetch<FoodDto>(`/api/v1/foods/${encodeURIComponent(id)}`);
 }

@@ -12,6 +12,7 @@ export default function Layout() {
           <NavLink to="/about">About</NavLink>
           <NavLink to="/profile">Profile</NavLink>
           <NavLink to="/goals">Goals</NavLink>
+          <NavLink to="/scan">Scan</NavLink>
         </nav>
         {/* Clerk account menu: profile + sign-out. Renders nothing when signed out.
             Sign-out redirect is configured once on <ClerkProvider> (afterSignOutUrl). */}

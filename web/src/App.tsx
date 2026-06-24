@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ProfilePage from './pages/ProfilePage';
 import GoalsPage from './pages/GoalsPage';
+import ScanPage from './pages/ScanPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="goals" element={<GoalsPage />} />
+          <Route path="scan" element={<ScanPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

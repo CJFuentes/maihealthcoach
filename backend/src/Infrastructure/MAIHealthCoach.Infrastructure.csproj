@@ -32,5 +32,8 @@
     <!-- Exposes internal types (e.g. the design-time AppDbContextFactory) to the
          integration test assembly so wiring can be verified without a database. -->
     <InternalsVisibleTo Include="MAIHealthCoach.Api.Tests" />
+    <!-- Exposes internal coaching types (AnthropicMessagesClient, CoachService, DTOs)
+         to the Infrastructure unit-test assembly (issue #36). -->
+    <InternalsVisibleTo Include="MAIHealthCoach.Infrastructure.Tests" />
   </ItemGroup>
 </Project>

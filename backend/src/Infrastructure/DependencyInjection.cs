@@ -1,5 +1,7 @@
+using MAIHealthCoach.Infrastructure.Auth;
 using MAIHealthCoach.Infrastructure.Configuration;
 using MAIHealthCoach.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,8 +30,38 @@ public static class DependencyInjection
 
         services.AddConfigurationOptions(configuration);
 
-        // Placeholder: repositories and external HTTP clients (Clerk JWKS, Anthropic,
+        services.AddClerkAuthentication();
+
+        // Placeholder: repositories and external HTTP clients (Anthropic,
         // Open Food Facts) will be registered here in later milestones.
+        return services;
+    }
+
+    /// <summary>
+    /// Registers Clerk JWT bearer authentication, default authorization, and the scoped
+    /// current-user provisioning service (issue #12).
+    /// </summary>
+    /// <remarks>
+    /// The bearer scheme is wired from <see cref="ClerkOptions"/> by
+    /// <see cref="ClerkJwtBearerConfigureOptions"/>, which is defensive: with empty Clerk
+    /// configuration the handler fails closed (every token -> 401) and never throws at
+    /// startup, so the API still builds, starts, and serves anonymous health checks.
+    /// </remarks>
+    public static IServiceCollection AddClerkAuthentication(this IServiceCollection services)
+    {
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer();
+
+        // Configure JwtBearerOptions from ClerkOptions. Singleton mirrors the lifetime of
+        // the bound options snapshot. Registered as IConfigureOptions so any test host can
+        // layer a PostConfigure override (e.g. a local signing key) on top of it.
+        services.AddSingleton<IConfigureOptions<JwtBearerOptions>, ClerkJwtBearerConfigureOptions>();
+
+        services.AddAuthorization();
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+
         return services;
     }
 

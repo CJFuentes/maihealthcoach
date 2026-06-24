@@ -1,3 +1,4 @@
+using MAIHealthCoach.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace MAIHealthCoach.Infrastructure.Persistence;
@@ -6,16 +7,18 @@ namespace MAIHealthCoach.Infrastructure.Persistence;
 /// The application's single EF Core <see cref="DbContext"/> and unit-of-work.
 /// Inject it directly into services that need data access; the change tracker
 /// provides the unit-of-work boundary and each <see cref="DbSet{TEntity}"/> acts
-/// as the repository for its aggregate. No DbSets are declared yet — entity sets
-/// are added in later milestones. The initial migration therefore creates only the
-/// <c>__EFMigrationsHistory</c> table and the <c>public</c> schema, establishing the
-/// migration baseline from which the schema is built up.
+/// as the repository for its aggregate. Entity sets are added per milestone; mappings
+/// live in <c>Persistence.Configurations</c> and are picked up by
+/// <c>ApplyConfigurationsFromAssembly</c> below.
 /// </summary>
 public sealed class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
+
+    /// <summary>Local users provisioned from Clerk identities (issue #12).</summary>
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

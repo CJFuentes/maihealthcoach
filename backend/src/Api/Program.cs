@@ -1,6 +1,7 @@
 using System.Reflection;
 using Asp.Versioning;
 using MAIHealthCoach.Api.Features.Coach;
+using MAIHealthCoach.Api.Features.Foods;
 using MAIHealthCoach.Api.Features.Goals;
 using MAIHealthCoach.Api.Features.Profile;
 using MAIHealthCoach.Api.Middleware;
@@ -184,6 +185,10 @@ try
 
     // MAI coach endpoints (issue #37): authenticated GET /api/v1/me/coach/meal-suggestions.
     v1.MapCoachEndpoints();
+
+    // Food search & detail endpoints (issue #21): authenticated GET /api/v1/foods,
+    // GET /api/v1/foods/{id}, and GET /api/v1/foods/barcode/{code} over INutritionLookupService.
+    v1.MapFoodsEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

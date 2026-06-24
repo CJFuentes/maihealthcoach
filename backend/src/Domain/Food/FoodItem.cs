@@ -137,4 +137,92 @@ public sealed class FoodItem : EntityBase
         UpdatedAt = now;
         return serving;
     }
+
+    /// <summary>
+    /// Refreshes this cached food in place from a fresh Open Food Facts fetch, keeping the
+    /// existing <see cref="EntityBase.Id"/> stable so future diary references remain valid
+    /// (issue #22). Updates the identifying/nutrition fields and reconciles the serving
+    /// collection so it carries exactly the canonical "100 g" serving plus, when supplied, the
+    /// single OFF-derived serving as the default.
+    /// </summary>
+    /// <remarks>
+    /// This method owns the food's invariants for a sync refresh: it never deletes-and-recreates
+    /// the row, never duplicates the canonical 100 g serving, never leaves a serving with a zero
+    /// grams-equivalent, and always leaves exactly one serving marked default. <see cref="Source"/>
+    /// is left unchanged — cache rows are always <see cref="FoodSource.OpenFoodFacts"/>.
+    /// Only already-mapped state is touched, so no EF migration is required.
+    /// </remarks>
+    /// <param name="name">Refreshed display name. Required.</param>
+    /// <param name="brand">Refreshed brand/manufacturer, or <see langword="null"/>.</param>
+    /// <param name="nutritionPer100g">Refreshed per-100 g nutrition facts. Required.</param>
+    /// <param name="offServing">
+    /// The single OFF-derived serving to set as default, or <see langword="null"/> when OFF
+    /// provided no usable serving (the canonical 100 g serving then becomes the default).
+    /// </param>
+    /// <param name="sourceReference">Refreshed external catalogue id/code, or <see langword="null"/>.</param>
+    /// <param name="syncedAt">The instant of this external sync; recorded as <see cref="LastSyncedAt"/>.</param>
+    public void RefreshFromSource(
+        string name,
+        string? brand,
+        NutritionFacts nutritionPer100g,
+        OffServing? offServing,
+        string? sourceReference,
+        DateTimeOffset syncedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(nutritionPer100g);
+
+        var now = DateTimeOffset.UtcNow;
+
+        Name = name;
+        Brand = brand;
+        NutritionPer100g = nutritionPer100g;
+        SourceReference = sourceReference;
+        LastSyncedAt = syncedAt;
+        UpdatedAt = now;
+
+        ReconcileServings(offServing, now);
+    }
+
+    /// <summary>
+    /// Rebuilds the serving collection around the canonical 100 g serving: keeps exactly one
+    /// canonical serving, drops all non-canonical servings, optionally adds the OFF serving as
+    /// the default, and guarantees exactly one default serving.
+    /// </summary>
+    private void ReconcileServings(OffServing? offServing, DateTimeOffset now)
+    {
+        // Identify the canonical 100 g serving (Unit == "g" && GramsEquivalent == 100).
+        var canonical = _servingSizes.FirstOrDefault(IsCanonical);
+
+        // Defensive: a well-formed food always carries a canonical serving, but if it is somehow
+        // missing (e.g. the row was loaded without its servings), recreate it so the invariant
+        // "exactly one canonical 100 g serving" always holds after a refresh.
+        if (canonical is null)
+        {
+            canonical = ServingSize.Create(Id, "100 g", quantity: 100m, unit: "g", gramsEquivalent: 100m, isDefault: false, createdAt: now);
+            _servingSizes.Add(canonical);
+        }
+
+        // Remove every serving that is not THE canonical one (this also drops duplicate
+        // canonical servings, keeping only the first), so we start from a clean canonical base.
+        _servingSizes.RemoveAll(s => !ReferenceEquals(s, canonical));
+
+        // Add the OFF serving as the default when it carries usable grams. AddServingSize demotes
+        // any existing default first, so the canonical serving (if it was default) is cleared.
+        if (offServing is { GramsEquivalent: > 0m })
+        {
+            AddServingSize(offServing.Label, offServing.Quantity, offServing.Unit, offServing.GramsEquivalent, isDefault: true);
+        }
+
+        // Ensure exactly one default. If nothing is default (e.g. OFF gave no serving), promote
+        // the canonical serving so a default portion always exists.
+        if (canonical is not null && !_servingSizes.Any(s => s.IsDefault))
+        {
+            canonical.SetAsDefault(now);
+        }
+    }
+
+    private static bool IsCanonical(ServingSize serving) =>
+        serving.GramsEquivalent == 100m
+        && string.Equals(serving.Unit, "g", StringComparison.Ordinal);
 }

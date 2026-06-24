@@ -1,7 +1,9 @@
 using MAIHealthCoach.Application.Coaching;
+using MAIHealthCoach.Application.Food;
 using MAIHealthCoach.Infrastructure.Auth;
 using MAIHealthCoach.Infrastructure.Coaching;
 using MAIHealthCoach.Infrastructure.Configuration;
+using MAIHealthCoach.Infrastructure.Food;
 using MAIHealthCoach.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -36,8 +38,8 @@ public static class DependencyInjection
 
         services.AddCoachingServices();
 
-        // Placeholder: repositories and other external HTTP clients (Open Food Facts)
-        // will be registered here in later milestones.
+        services.AddNutritionLookupServices();
+
         return services;
     }
 
@@ -70,6 +72,35 @@ public static class DependencyInjection
         });
 
         services.AddScoped<ICoachService, CoachService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the typed Open Food Facts <see cref="HttpClient"/> and the
+    /// <see cref="INutritionLookupService"/> implementation (issue #20).
+    /// </summary>
+    /// <remarks>
+    /// The <c>BaseAddress</c>, <c>Timeout</c>, and required <c>User-Agent</c> are configured here
+    /// from <see cref="OpenFoodFactsOptions"/>. The <c>User-Agent</c> is attached with
+    /// <c>TryAddWithoutValidation</c> so a malformed value can never throw at startup — Open Food
+    /// Facts requires the header but the app must still boot with default/empty configuration.
+    /// </remarks>
+    public static IServiceCollection AddNutritionLookupServices(this IServiceCollection services)
+    {
+        services.AddHttpClient<OpenFoodFactsClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<OpenFoodFactsOptions>>().Value;
+
+            // Ensure the base address ends with '/' so relative paths like "api/v2/product/..."
+            // resolve under the host rather than dropping the last segment.
+            var baseUrl = options.BaseUrl.TrimEnd('/') + '/';
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", options.UserAgent);
+        });
+
+        services.AddScoped<INutritionLookupService, NutritionLookupService>();
 
         return services;
     }
@@ -125,6 +156,10 @@ public static class DependencyInjection
         services.AddOptions<AiOptions>()
             .Bind(configuration.GetSection(AiOptions.SectionName));
         services.AddSingleton<IValidateOptions<AiOptions>, AiOptionsValidator>();
+
+        services.AddOptions<OpenFoodFactsOptions>()
+            .Bind(configuration.GetSection(OpenFoodFactsOptions.SectionName));
+        services.AddSingleton<IValidateOptions<OpenFoodFactsOptions>, OpenFoodFactsOptionsValidator>();
 
         return services;
     }

@@ -26,7 +26,8 @@ export interface ServingSize {
 
 /**
  * A food as returned by the backend food endpoints
- * (`GET /api/v1/foods/barcode/{code}` and `GET /api/v1/foods?q=`).
+ * (`GET /api/v1/foods/barcode/{code}`, `GET /api/v1/foods?q=` and
+ * `GET /api/v1/foods/{id}`).
  *
  * `source` indicates the origin of the record (e.g. "OpenFoodFacts" or
  * "Custom"). `barcode` is null for foods that were not matched by code.
@@ -39,6 +40,19 @@ export interface FoodDto {
   source: string;
   nutritionPer100g: NutritionPer100g;
   servingSizes: ServingSize[];
+}
+
+/**
+ * A single page of food-search results from `GET /api/v1/foods?q=`.
+ *
+ * `items` is the page of matches; the optional paging fields are populated when
+ * the backend returns them (the diary UI only consumes `items` today).
+ */
+export interface FoodSearchResponse {
+  items: FoodDto[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
 }
 
 /**
@@ -93,4 +107,26 @@ export async function lookupBarcode(code: string): Promise<FoodDto | null> {
     }
     throw error;
   }
+}
+
+/**
+ * Searches the food database by free-text query (`GET /api/v1/foods?q=`).
+ *
+ * Returns a {@link FoodSearchResponse}; throws {@link ApiError} on a non-2xx
+ * status so the caller can surface an error state. The query is URL-encoded.
+ */
+export async function searchFoods(query: string, page = 1): Promise<FoodSearchResponse> {
+  return apiFetch<FoodSearchResponse>(
+    `/api/v1/foods?q=${encodeURIComponent(query)}&page=${page}`,
+  );
+}
+
+/**
+ * Fetches a single food by id (`GET /api/v1/foods/{id}`).
+ *
+ * Used by the diary edit flow to re-hydrate the full food (and its serving
+ * sizes) for an existing entry. Throws {@link ApiError} on a non-2xx status.
+ */
+export async function getFood(id: string): Promise<FoodDto> {
+  return apiFetch<FoodDto>(`/api/v1/foods/${encodeURIComponent(id)}`);
 }

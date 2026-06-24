@@ -293,6 +293,249 @@ form > button[type='submit'] {
   color: var(--color-muted);
 }
 
+/* Diary — date navigation */
+.diary-date-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.diary-date-label {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  min-width: 12rem;
+}
+
+/* Diary — daily summary */
+.diary-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.diary-summary-nutrient {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.diary-summary-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.diary-summary-value-over {
+  color: var(--color-error);
+}
+
+.diary-summary-goal {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.diary-summary-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+/* Diary — meal sections */
+.diary-meal-section {
+  margin-bottom: 1.5rem;
+}
+
+.diary-meal-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.diary-meal-header h2 {
+  margin: 0;
+}
+
+.diary-meal-kcal {
+  font-size: 0.88rem;
+  color: var(--color-muted);
+}
+
+.diary-entry-list {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.diary-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.diary-entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.diary-entry-name {
+  display: block;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.diary-entry-brand {
+  font-size: 0.85rem;
+}
+
+.diary-entry-serving {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.diary-entry-nutrition {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.diary-entry-kcal {
+  display: block;
+  font-weight: 600;
+}
+
+.diary-entry-macros {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+.diary-entry-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.diary-add-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* Diary — dialog */
+dialog.diary-dialog {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  max-width: 520px;
+  width: 90vw;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+dialog.diary-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.dialog-header h2 {
+  margin: 0;
+}
+
+/* Diary — food search */
+.food-search-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.food-search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.food-search-result-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.food-search-result-btn:hover:not(:disabled) {
+  background: var(--color-bg);
+  border-color: var(--color-primary);
+}
+
+.food-result-name {
+  font-weight: 500;
+}
+
+.food-result-meta {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+/* Diary — entry config preview */
+.entry-nutrition-preview {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  text-align: center;
+  margin: 0.75rem 0;
+}
+
+.entry-preview-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.entry-preview-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.entry-preview-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
 /* ── Barcode scan page ─────────────────────────────────────────────── */
 
 .scan-page .hint {

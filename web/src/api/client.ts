@@ -102,5 +102,11 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     );
   }
 
+  // 204 No Content / 205 Reset Content have no body to parse. DELETE endpoints
+  // in particular return 204; calling response.json() on them would throw.
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }

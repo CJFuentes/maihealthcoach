@@ -2,8 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   lookupBarcode,
   normalizeBarcode,
+  searchFoods,
+  getFood,
   FoodServiceUnavailableError,
   type FoodDto,
+  type FoodSearchResponse,
 } from './foods';
 import { ApiError, setTokenProvider } from './client';
 
@@ -92,5 +95,57 @@ describe('lookupBarcode', () => {
 
     await expect(lookupBarcode('5000159484695')).rejects.toBeInstanceOf(ApiError);
     await expect(lookupBarcode('5000159484695')).rejects.toMatchObject({ status: 500 });
+  });
+});
+
+describe('searchFoods', () => {
+  it('returns the parsed search response on 200', async () => {
+    const response: FoodSearchResponse = { items: [sampleFood], total: 1, page: 1, pageSize: 20 };
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse(response));
+
+    const result = await searchFoods('chocolate');
+
+    expect(result).toEqual(response);
+  });
+
+  it('URL-encodes the query string', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(mockJsonResponse({ items: [] }));
+
+    await searchFoods('chicken breast');
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/v1/foods?q=chicken%20breast&page=1',
+      expect.objectContaining({}),
+    );
+  });
+
+  it('throws an ApiError on a non-2xx failure', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse(null, false, 500));
+
+    await expect(searchFoods('x')).rejects.toBeInstanceOf(ApiError);
+    await expect(searchFoods('x')).rejects.toMatchObject({ status: 500 });
+  });
+});
+
+describe('getFood', () => {
+  it('returns the parsed food on 200', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse(sampleFood));
+
+    const result = await getFood('food-1');
+
+    expect(result).toEqual(sampleFood);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      '/api/v1/foods/food-1',
+      expect.objectContaining({}),
+    );
+  });
+
+  it('throws an ApiError with status 404 when the food is not found', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse(null, false, 404));
+
+    await expect(getFood('missing')).rejects.toBeInstanceOf(ApiError);
+    await expect(getFood('missing')).rejects.toMatchObject({ status: 404 });
   });
 });

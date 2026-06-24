@@ -1,5 +1,6 @@
 using MAIHealthCoach.Application.Goals;
 using MAIHealthCoach.Application.MealSuggestions;
+using MAIHealthCoach.Application.Nudges;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MAIHealthCoach.Application;
@@ -17,6 +18,9 @@ public static class DependencyInjection
 
         // Meal suggestions (issue #37) orchestrate per-request coaching calls — scoped.
         services.AddScoped<IMealSuggestionService, MealSuggestionService>();
+
+        // Motivational nudges (issue #38) orchestrate per-request coaching calls — scoped.
+        services.AddScoped<INudgeService, NudgeService>();
 
         return services;
     }

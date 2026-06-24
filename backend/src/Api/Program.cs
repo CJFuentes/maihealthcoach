@@ -1,6 +1,8 @@
 using System.Reflection;
 using MAIHealthCoach.Application;
 using MAIHealthCoach.Infrastructure;
+using MAIHealthCoach.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,18 @@ builder.Services.AddOpenApi();
 
 // ── App ───────────────────────────────────────────────────────────────────────
 var app = builder.Build();
+
+// Apply pending EF Core migrations automatically in Development when opted in.
+// Guarded by Database:AutoMigrate (default false in appsettings.json) so integration
+// tests and CI never attempt a database connection. Dev-only by design — production
+// applies migrations via `dotnet ef database update` in the deploy pipeline.
+if (app.Environment.IsDevelopment()
+    && app.Configuration.GetValue<bool>("Database:AutoMigrate"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -45,7 +59,7 @@ app.MapGet("/api/v1/ping", () =>
 })
 .WithName("Ping");
 
-app.Run();
+await app.RunAsync();
 
 // Exposes the implicit Program class to the test assembly for WebApplicationFactory<Program>.
 public partial class Program { }

@@ -1,3 +1,5 @@
+using MAIHealthCoach.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,8 +14,14 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Placeholder: EF Core DbContext, repositories, and external HTTP clients
-        // (Clerk JWKS, Anthropic, Open Food Facts) will be registered here in later milestones.
+        var connectionString = configuration.GetConnectionString("Postgres")
+            ?? throw new InvalidOperationException(
+                "Connection string 'Postgres' is not configured. Set ConnectionStrings__Postgres via environment variable, user-secrets, or appsettings.Development.json.");
+
+        services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+
+        // Placeholder: repositories and external HTTP clients (Clerk JWKS, Anthropic,
+        // Open Food Facts) will be registered here in later milestones.
         return services;
     }
 }

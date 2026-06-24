@@ -42,26 +42,33 @@ services:
       dockerfile: deploy/backend/Containerfile
     restart: unless-stopped
     environment:
-      # Development => Program.cs skips UseHttpsRedirection, so plain HTTP works.
+      # Development => Program.cs skips UseHttpsRedirection (plain HTTP works) AND
+      # enables the gated EF Core auto-migration below.
       ASPNETCORE_ENVIRONMENT: Development
       # Already set by the base image; restated here to document the contract.
       ASPNETCORE_HTTP_PORTS: "8080"
-      # Consumed via IConfiguration["ConnectionStrings:Default"] (the double
-      # underscore maps to the nested config path). No code reads this yet
-      # (Infrastructure DI is a placeholder), but the API is DB-ready for when
-      # EF Core + Npgsql are wired up in a later milestone.
-      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      # Apply pending EF Core migrations on first boot. Program.cs only honours
+      # this in Development (guarded by Database:AutoMigrate), so the schema is
+      # created automatically and /healthz/ready comes up green.
+      Database__AutoMigrate: "true"
+      # Consumed by Infrastructure DI via configuration.GetConnectionString("Postgres")
+      # (i.e. ConnectionStrings:Postgres). The double underscore maps to the nested
+      # config path. This is the established connection-string convention — the API
+      # throws on startup if it is absent.
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      # /healthz/ready includes the Postgres connectivity check, so the API is
+      # only reported healthy once it can actually reach the database (AC1).
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz/ready || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 15s
+      start_period: 20s
 
 # -- Named volumes ------------------------------------------------------------
 volumes:

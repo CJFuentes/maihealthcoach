@@ -34,6 +34,15 @@ public sealed class FoodItem : EntityBase
     public FoodSource Source { get; private set; }
 
     /// <summary>
+    /// Nullable foreign key to the <c>User</c> who created this custom food, or
+    /// <see langword="null"/> for shared Open Food Facts-sourced foods. Custom foods
+    /// (<see cref="FoodSource.Custom"/>) always have a non-null value; this is the
+    /// ownership/privacy boundary that scopes a custom food to its creator (issue #24).
+    /// Ownership is immutable — there is no method to reassign it.
+    /// </summary>
+    public Guid? CreatedByUserId { get; private set; }
+
+    /// <summary>
     /// External catalogue identifier this food was sourced from (e.g. the Open Food Facts product
     /// code), or <see langword="null"/> for user-created foods.
     /// </summary>
@@ -107,6 +116,131 @@ public sealed class FoodItem : EntityBase
             food.Id, "100 g", quantity: 100m, unit: "g", gramsEquivalent: 100m, isDefault: false, createdAt: now));
 
         return food;
+    }
+
+    /// <summary>
+    /// Creates a user-authored custom food (<see cref="FoodSource.Custom"/>) owned by
+    /// <paramref name="createdByUserId"/>, with its per-100 g nutrition and a canonical
+    /// "100 g" serving. Mirrors <see cref="Create"/> but stamps ownership and leaves all
+    /// external-catalogue fields (<see cref="Barcode"/>, <see cref="SourceReference"/>,
+    /// <see cref="LastSyncedAt"/>) <see langword="null"/> (issue #24).
+    /// </summary>
+    /// <param name="createdByUserId">Owner user id. Required and must be non-empty.</param>
+    /// <param name="name">Display name. Required.</param>
+    /// <param name="nutritionPer100g">Per-100 g nutrition facts. Required.</param>
+    /// <param name="brand">Brand/manufacturer, or <see langword="null"/>.</param>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="name"/> is null/blank, or <paramref name="createdByUserId"/> is empty.
+    /// </exception>
+    /// <exception cref="ArgumentNullException"><paramref name="nutritionPer100g"/> is null.</exception>
+    public static FoodItem CreateCustom(
+        Guid createdByUserId,
+        string name,
+        NutritionFacts nutritionPer100g,
+        string? brand = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(nutritionPer100g);
+        if (createdByUserId == Guid.Empty)
+        {
+            throw new ArgumentException("A custom food must have a non-empty owner id.", nameof(createdByUserId));
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var food = new FoodItem
+        {
+            Name = name,
+            Source = FoodSource.Custom,
+            CreatedByUserId = createdByUserId,
+            NutritionPer100g = nutritionPer100g,
+            Brand = brand,
+            Barcode = null,
+            SourceReference = null,
+            LastSyncedAt = null,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+
+        // Canonical per-100 g serving: mirrors the nutrition basis so a portion always exists.
+        food._servingSizes.Add(ServingSize.Create(
+            food.Id, "100 g", quantity: 100m, unit: "g", gramsEquivalent: 100m, isDefault: false, createdAt: now));
+
+        return food;
+    }
+
+    /// <summary>
+    /// Edits a custom food's identifying fields and per-100 g nutrition. Does not touch the
+    /// serving collection — use <see cref="ReplaceCustomServings"/> for that (issue #24).
+    /// </summary>
+    /// <param name="name">Replacement display name. Required.</param>
+    /// <param name="brand">Replacement brand/manufacturer, or <see langword="null"/>.</param>
+    /// <param name="nutritionPer100g">Replacement per-100 g nutrition facts. Required.</param>
+    /// <exception cref="ArgumentException"><paramref name="name"/> is null/blank.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="nutritionPer100g"/> is null.</exception>
+    public void UpdateCustomDetails(string name, string? brand, NutritionFacts nutritionPer100g)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentNullException.ThrowIfNull(nutritionPer100g);
+
+        Name = name;
+        Brand = brand;
+        NutritionPer100g = nutritionPer100g;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Replaces the non-canonical servings of a custom food with the supplied set: keeps exactly
+    /// the canonical "100 g" serving (recreating it if missing), drops all others, then re-adds
+    /// each provided serving via <see cref="AddServingSize"/> (which demotes prior defaults so at
+    /// most one serving is default). If, after re-adding, no serving is default, the canonical
+    /// serving is promoted so a default portion always exists (issue #24).
+    /// </summary>
+    /// <remarks>
+    /// Each provided serving is validated by <see cref="ServingSize.Create"/> (quantity and
+    /// grams-equivalent must be &gt; 0, label/unit non-blank), so invalid input throws. The API
+    /// layer must validate the request BEFORE calling this so it returns 400, not 500.
+    /// </remarks>
+    /// <param name="servings">
+    /// The replacement non-canonical servings as
+    /// <c>(Label, Quantity, Unit, GramsEquivalent, IsDefault)</c> tuples.
+    /// </param>
+    public void ReplaceCustomServings(
+        IReadOnlyCollection<(string Label, decimal Quantity, string Unit, decimal GramsEquivalent, bool IsDefault)> servings)
+    {
+        ArgumentNullException.ThrowIfNull(servings);
+
+        var now = DateTimeOffset.UtcNow;
+
+        // Identify the canonical 100 g serving (Unit == "g" && GramsEquivalent == 100).
+        var canonical = _servingSizes.FirstOrDefault(IsCanonical);
+
+        // Defensive: a well-formed custom food always carries a canonical serving, but if it is
+        // somehow missing recreate it so the "exactly one canonical 100 g serving" invariant holds.
+        if (canonical is null)
+        {
+            canonical = ServingSize.Create(Id, "100 g", quantity: 100m, unit: "g", gramsEquivalent: 100m, isDefault: false, createdAt: now);
+            _servingSizes.Add(canonical);
+        }
+
+        // Drop every serving that is not THE canonical one (also removes duplicate canonical
+        // servings, keeping only the first), so we re-add from a clean canonical base.
+        _servingSizes.RemoveAll(s => !ReferenceEquals(s, canonical));
+
+        // Re-add each provided serving. AddServingSize demotes any existing default first, so the
+        // last serving flagged default wins and the canonical serving is cleared if it was default.
+        foreach (var (label, quantity, unit, gramsEquivalent, isDefault) in servings)
+        {
+            AddServingSize(label, quantity, unit, gramsEquivalent, isDefault);
+        }
+
+        // Ensure exactly one default. If nothing is default (e.g. no provided serving was flagged),
+        // promote the canonical serving so a default portion always exists.
+        if (!_servingSizes.Any(s => s.IsDefault))
+        {
+            canonical.SetAsDefault(now);
+        }
+
+        UpdatedAt = now;
     }
 
     /// <summary>

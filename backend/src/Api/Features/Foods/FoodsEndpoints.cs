@@ -1,4 +1,5 @@
 using MAIHealthCoach.Application.Food;
+using MAIHealthCoach.Infrastructure.Auth;
 using MAIHealthCoach.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,7 @@ namespace MAIHealthCoach.Api.Features.Foods;
 /// Registers the food search &amp; detail endpoints on the supplied versioned route builder (issue #21).
 /// <list type="bullet">
 ///   <item><description><c>GET /foods</c> — text search over Open Food Facts via <see cref="INutritionLookupService"/>.</description></item>
-///   <item><description><c>GET /foods/{id}</c> — fetch a persisted food (cache row or user-created) by id.</description></item>
+///   <item><description><c>GET /foods/{id}</c> — fetch a shared food (OFF cache row) or the caller's own custom food by id; 404 otherwise (another user's custom food is never surfaced).</description></item>
 ///   <item><description><c>GET /foods/barcode/{code}</c> — cache-first barcode lookup via <see cref="INutritionLookupService"/>.</description></item>
 /// </list>
 /// All endpoints require authorization. Open Food Facts is never called directly — every lookup goes
@@ -97,15 +98,25 @@ internal static class FoodsEndpoints
 
     // ── GET /api/v1/foods/{id} ────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Fetches a persisted food by id, scoped to what the caller may see: a shared OFF food
+    /// (null owner) or the caller's own custom food. Another user's custom food yields 404
+    /// (indistinguishable from missing) so private custom foods are never leaked across users.
+    /// </summary>
     private static async Task<IResult> GetFoodByIdAsync(
         Guid id,
+        ICurrentUserService currentUser,
         AppDbContext db,
         CancellationToken ct)
     {
+        var user = await currentUser.GetOrCreateCurrentUserAsync(ct);
+
+        // Visibility filter: shared OFF foods (null owner) or the caller's own custom food. Another
+        // user's custom food never matches, so it returns 404 rather than leaking its existence.
         var food = await db.FoodItems
             .AsNoTracking()
             .Include(f => f.ServingSizes)
-            .FirstOrDefaultAsync(f => f.Id == id, ct);
+            .FirstOrDefaultAsync(f => f.Id == id && (f.CreatedByUserId == null || f.CreatedByUserId == user.Id), ct);
 
         if (food is null)
         {

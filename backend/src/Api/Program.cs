@@ -200,6 +200,11 @@ try
     // GET /api/v1/me/summary?date= — consumed vs goal targets for calories + macros.
     v1.MapSummaryEndpoints();
 
+    // Custom foods, favorites & recents endpoints (issue #24): authenticated CRUD over
+    // /api/v1/me/foods plus /me/foods/{id}/favorite and the /me/foods/favorites and
+    // /me/foods/recents listings.
+    v1.MapMyFoodsEndpoints();
+
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the
     // Testing:ExposeThrowEndpoint flag (used by integration tests that need to verify

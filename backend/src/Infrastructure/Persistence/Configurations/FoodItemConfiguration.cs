@@ -1,4 +1,5 @@
 using MAIHealthCoach.Domain.Food;
+using MAIHealthCoach.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -44,6 +45,9 @@ internal sealed class FoodItemConfiguration : IEntityTypeConfiguration<FoodItem>
 
         builder.Property(f => f.LastSyncedAt);
 
+        // Nullable owner FK: set for custom foods (issue #24), null for shared OFF foods.
+        builder.Property(f => f.CreatedByUserId);
+
         builder.Property(f => f.CreatedAt).IsRequired();
         builder.Property(f => f.UpdatedAt).IsRequired();
 
@@ -59,6 +63,19 @@ internal sealed class FoodItemConfiguration : IEntityTypeConfiguration<FoodItem>
         // Name search index (prefix/equality lookups for #21).
         builder.HasIndex(f => f.Name)
             .HasDatabaseName("IX_FoodItems_Name");
+
+        // Owner index: supports listing a user's own custom foods (WHERE CreatedByUserId = ?)
+        // for GET /me/foods (issue #24). Most rows are shared OFF foods with a null owner.
+        builder.HasIndex(f => f.CreatedByUserId)
+            .HasDatabaseName("IX_FoodItems_CreatedByUserId");
+
+        // FK to Users for the custom-food owner. Nullable FK => optional relationship; users are
+        // never hard-deleted in v1, so Restrict is fine (it never cascade-deletes foods).
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(f => f.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .HasConstraintName("FK_FoodItems_Users_CreatedByUserId");
 
         // Per-100 g nutrition is a REQUIRED owned value object. Marking the navigation required
         // (plus non-nullable macro columns below) prevents EF's "all owned columns null =>

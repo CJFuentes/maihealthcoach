@@ -33,6 +33,19 @@ public sealed class FoodsEndpointTests : IClassFixture<AuthTestWebApplicationFac
         _client = factory.CreateClient();
     }
 
+    // A minimal valid create-custom-food request body (per-100 g nutrition, no extra servings).
+    private static object CustomFoodBody(string name) => new
+    {
+        name,
+        nutrition = new
+        {
+            energyKcal = 120m,
+            proteinG = 8m,
+            carbohydrateG = 4m,
+            fatG = 6m,
+        },
+    };
+
     // ── Auth guard: every food route requires a bearer token ─────────────────────
 
     [Fact]
@@ -112,10 +125,58 @@ public sealed class FoodsEndpointTests : IClassFixture<AuthTestWebApplicationFac
             response.Content.Headers.ContentType?.MediaType ?? string.Empty);
     }
 
+    // ── Fetch-by-id: custom-food visibility is scoped to the owner (issue #24) ────
+
+    [Fact]
+    public async Task GetFoodById_OwnCustomFood_Returns200()
+    {
+        var ownerToken = TokenFor("foods_byid_own_custom");
+
+        var customId = await CreateCustomFood(ownerToken, "Owner's Protein Shake");
+
+        var response = await Get(ownerToken, string.Format(ByIdRoute, customId));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(customId, body.GetProperty("id").GetGuid());
+        Assert.Equal("Custom", body.GetProperty("source").GetString());
+    }
+
+    [Fact]
+    public async Task GetFoodById_OtherUsersCustomFood_Returns404()
+    {
+        var ownerToken = TokenFor("foods_byid_xuser_owner");
+        var attackerToken = TokenFor("foods_byid_xuser_attacker");
+
+        var customId = await CreateCustomFood(ownerToken, "Private Custom Food");
+
+        // The attacker knows the id but must not be able to read another user's custom food:
+        // it is indistinguishable from a missing food (404), never leaked.
+        var response = await Get(attackerToken, string.Format(ByIdRoute, customId));
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────────
 
     private static string TokenFor(string sub) =>
         JwtTestHelper.CreateToken(sub, $"{sub}@test.local");
+
+    /// <summary>
+    /// Creates a custom food for the given user via <c>POST /api/v1/me/foods</c> and returns its id.
+    /// </summary>
+    private async Task<Guid> CreateCustomFood(string token, string name)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/me/foods")
+        {
+            Content = JsonContent.Create(CustomFoodBody(name)),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("id").GetGuid();
+    }
 
     private async Task<HttpResponseMessage> Get(string token, string route)
     {

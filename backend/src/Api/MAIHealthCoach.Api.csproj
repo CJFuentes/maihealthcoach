@@ -3,6 +3,9 @@
     <AssemblyName>MAIHealthCoach.Api</AssemblyName>
     <RootNamespace>MAIHealthCoach.Api</RootNamespace>
     <Version>0.1.0</Version>
+    <!-- Enables `dotnet user-secrets` for local-dev secrets (Clerk/Claude keys), kept out
+         of source control. See backend/src/Api/README.md for the required keys. -->
+    <UserSecretsId>maihealthcoach-api-1f4c0e2a-3b7d-4e6f-9a21-config-secrets</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />

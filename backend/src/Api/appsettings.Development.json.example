@@ -10,5 +10,13 @@
   },
   "Database": {
     "AutoMigrate": true
+  },
+  "//secrets": "Do NOT put Clerk/Claude secrets in this file. Use `dotnet user-secrets` (the Api project has a UserSecretsId) or environment variables. Example: dotnet user-secrets set \"Ai:ApiKey\" \"sk-ant-...\"  and  dotnet user-secrets set \"Clerk:Authority\" \"https://your-instance.clerk.accounts.dev\"",
+  "Clerk": {
+    "Authority": "",
+    "JwksUrl": ""
+  },
+  "Ai": {
+    "ApiKey": ""
   }
 }

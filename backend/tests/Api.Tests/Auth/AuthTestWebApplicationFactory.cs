@@ -1,3 +1,4 @@
+using MAIHealthCoach.Api.Tests.Food;
 using MAIHealthCoach.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
@@ -91,7 +92,13 @@ public class AuthTestWebApplicationFactory : WebApplicationFactory<Program>
         services.RemoveAll<DbContextOptions>();
         services.RemoveAll<AppDbContext>();
 
-        services.AddDbContext<AppDbContext>(options => options.UseSqlite(_connection));
+        // Replace the SQLite model customizer so DateTimeOffset and DateOnly properties get
+        // test-only value converters (UTC ticks / ISO strings). Without this, SQLite cannot
+        // translate ORDER BY over DateTimeOffset or WHERE/equality over DateOnly — which the
+        // food diary's day lookup (issue #22) relies on. Production (Npgsql) is unaffected.
+        services.AddDbContext<AppDbContext>(options => options
+            .UseSqlite(_connection)
+            .ReplaceService<IModelCustomizer, SqliteDateTimeOffsetModelCustomizer>());
     }
 
     protected override IHost CreateHost(IHostBuilder builder)

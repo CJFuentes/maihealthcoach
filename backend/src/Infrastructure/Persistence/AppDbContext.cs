@@ -1,3 +1,4 @@
+using MAIHealthCoach.Domain.Diary;
 using MAIHealthCoach.Domain.Food;
 using MAIHealthCoach.Domain.Goals;
 using MAIHealthCoach.Domain.UserProfiles;
@@ -37,6 +38,9 @@ public sealed class AppDbContext : DbContext
 
     /// <summary>Serving-size portions belonging to a <see cref="FoodItem"/> (issue #19).</summary>
     public DbSet<ServingSize> ServingSizes => Set<ServingSize>();
+
+    /// <summary>Food diary log entries, one per logged food per meal per day (issue #22).</summary>
+    public DbSet<DiaryEntry> DiaryEntries => Set<DiaryEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

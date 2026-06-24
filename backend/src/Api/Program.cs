@@ -1,6 +1,7 @@
 using System.Reflection;
 using Asp.Versioning;
 using MAIHealthCoach.Api.Features.Coach;
+using MAIHealthCoach.Api.Features.Diary;
 using MAIHealthCoach.Api.Features.Foods;
 using MAIHealthCoach.Api.Features.Goals;
 using MAIHealthCoach.Api.Features.Profile;
@@ -189,6 +190,10 @@ try
     // Food search & detail endpoints (issue #21): authenticated GET /api/v1/foods,
     // GET /api/v1/foods/{id}, and GET /api/v1/foods/barcode/{code} over INutritionLookupService.
     v1.MapFoodsEndpoints();
+
+    // Food diary endpoints (issue #22): authenticated POST /api/v1/me/diary,
+    // GET /api/v1/me/diary?date=, PUT/DELETE /api/v1/me/diary/{id}.
+    v1.MapDiaryEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

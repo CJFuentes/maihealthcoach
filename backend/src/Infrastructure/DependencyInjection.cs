@@ -1,3 +1,4 @@
+using MAIHealthCoach.Infrastructure.Configuration;
 using MAIHealthCoach.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,8 +26,37 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
+        services.AddConfigurationOptions(configuration);
+
         // Placeholder: repositories and external HTTP clients (Clerk JWKS, Anthropic,
         // Open Food Facts) will be registered here in later milestones.
+        return services;
+    }
+
+    /// <summary>
+    /// Binds the strongly-typed <see cref="ClerkOptions"/> and <see cref="AiOptions"/> from
+    /// configuration and registers format-only validators for them.
+    /// </summary>
+    /// <remarks>
+    /// Validation is intentionally <strong>lazy</strong> — <c>ValidateOnStart()</c> is NOT
+    /// used. The Clerk and AI integrations are not wired up yet (#12, #36), so the API must
+    /// build, start, and pass health checks with empty Clerk/Claude secrets. The validators
+    /// only check the <em>format</em> of values that are actually supplied, so a misconfigured
+    /// URL is still caught the first time the options are resolved without forcing every run
+    /// to carry real secrets.
+    /// </remarks>
+    public static IServiceCollection AddConfigurationOptions(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddOptions<ClerkOptions>()
+            .Bind(configuration.GetSection(ClerkOptions.SectionName));
+        services.AddSingleton<IValidateOptions<ClerkOptions>, ClerkOptionsValidator>();
+
+        services.AddOptions<AiOptions>()
+            .Bind(configuration.GetSection(AiOptions.SectionName));
+        services.AddSingleton<IValidateOptions<AiOptions>, AiOptionsValidator>();
+
         return services;
     }
 

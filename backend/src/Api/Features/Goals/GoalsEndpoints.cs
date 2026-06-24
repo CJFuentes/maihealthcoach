@@ -45,7 +45,7 @@ internal static class GoalsEndpoints
             .Include(p => p.WeightMeasurements)
             .FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
 
-        if (BuildCalculatorInput(profile) is not { } input)
+        if (ProfileGoalsMapper.BuildCalculatorInput(profile) is not { } input)
         {
             return ProfileProblem(profile);
         }
@@ -82,7 +82,7 @@ internal static class GoalsEndpoints
             .Include(p => p.WeightMeasurements)
             .FirstOrDefaultAsync(p => p.UserId == user.Id, ct);
 
-        if (BuildCalculatorInput(profile) is not { } input)
+        if (ProfileGoalsMapper.BuildCalculatorInput(profile) is not { } input)
         {
             return ProfileProblem(profile);
         }
@@ -141,35 +141,9 @@ internal static class GoalsEndpoints
     // ── Helpers ───────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Builds a <see cref="GoalsCalculatorInput"/> from a profile, or returns
-    /// <see langword="null"/> when the profile is missing or lacks any required biometric.
-    /// Callers translate a <see langword="null"/> result via <see cref="ProfileProblem"/>.
-    /// </summary>
-    private static GoalsCalculatorInput? BuildCalculatorInput(UserProfile? profile)
-    {
-        if (profile is null
-            || profile.LatestWeightKg is not { } weightKg
-            || profile.HeightCm is not { } heightCm
-            || profile.DateOfBirth is not { } dob
-            || profile.BiologicalSex is not { } sex
-            || profile.ActivityLevel is not { } activity
-            || profile.PrimaryGoal is not { } goal)
-        {
-            return null;
-        }
-
-        return new GoalsCalculatorInput(
-            WeightKg: weightKg,
-            HeightCm: heightCm,
-            AgeYears: AgeFrom(dob),
-            BiologicalSex: sex,
-            ActivityLevel: activity,
-            PrimaryGoal: goal);
-    }
-
-    /// <summary>
     /// Produces the 404/409 ProblemDetails for a missing profile or one with insufficient
-    /// biometrics. Mirrors the field-completeness check in <see cref="BuildCalculatorInput"/>.
+    /// biometrics. Mirrors the field-completeness check in
+    /// <see cref="ProfileGoalsMapper.BuildCalculatorInput"/>.
     /// </summary>
     private static IResult ProfileProblem(UserProfile? profile)
     {
@@ -194,22 +168,6 @@ internal static class GoalsEndpoints
             detail: $"The following profile fields are required for goals computation but are not set: {string.Join(", ", missing)}. " +
                     "Update your profile via PUT /api/v1/me/profile.",
             statusCode: StatusCodes.Status409Conflict);
-    }
-
-    /// <summary>
-    /// Computes whole-year age from <paramref name="dob"/> relative to the server's UTC date.
-    /// Mirrors the algorithm in <c>ProfileValidator</c> exactly.
-    /// </summary>
-    private static int AgeFrom(DateOnly dob)
-    {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var age = today.Year - dob.Year;
-        if (dob > today.AddYears(-age))
-        {
-            age--;
-        }
-
-        return age;
     }
 
     // Exception filter (must be synchronous) — only swallows DbUpdateException when the

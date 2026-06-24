@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>MAIHealthCoach.Api</AssemblyName>
+    <RootNamespace>MAIHealthCoach.Api</RootNamespace>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Application\MAIHealthCoach.Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\MAIHealthCoach.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

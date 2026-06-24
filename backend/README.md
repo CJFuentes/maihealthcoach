@@ -6,7 +6,7 @@ This directory contains the server-side application for MAI Health Coach.
 
 | Concern           | Technology                          |
 |-------------------|-------------------------------------|
-| Framework         | ASP.NET Core Web API (.NET 9)       |
+| Framework         | ASP.NET Core Web API (.NET 10)      |
 | Architecture      | Layered: Api / Application / Domain / Infrastructure |
 | Database          | PostgreSQL 16 via Entity Framework Core |
 | Auth              | Clerk JWT validation (JWKS endpoint) |

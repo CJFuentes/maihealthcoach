@@ -43,7 +43,7 @@ MAI Health Coach lets users:
 
 | Layer          | Technology                                        |
 |----------------|---------------------------------------------------|
-| Backend API    | ASP.NET Core Web API (.NET 9), layered architecture (Api / Application / Domain / Infrastructure) |
+| Backend API    | ASP.NET Core Web API (.NET 10), layered architecture (Api / Application / Domain / Infrastructure) |
 | Database       | PostgreSQL + Entity Framework Core                |
 | Auth           | Clerk — backend validates Clerk JWTs against JWKS |
 | AI Coach       | Anthropic Claude API (`claude-sonnet-4-6` default, `claude-opus-4-8` for escalated requests) |
@@ -90,14 +90,16 @@ graph TD
         Android["Android (Kotlin / Compose)"]
     end
 
-    subgraph Backend ["Backend (ASP.NET Core Web API — .NET 9)"]
+    subgraph Backend ["Backend (ASP.NET Core Web API — .NET 10)"]
         API["Api Layer<br/>Controllers · Middleware · Auth"]
         App["Application Layer<br/>CQRS Commands/Queries · Service Interfaces"]
         Domain["Domain Layer<br/>Entities · Value Objects · Business Rules"]
         Infra["Infrastructure Layer<br/>EF Core · HTTP Clients · Repositories"]
         API --> App
+        API --> Infra
         App --> Domain
-        App --> Infra
+        Infra --> App
+        Infra --> Domain
     end
 
     subgraph ExternalServices ["External Services"]
@@ -124,7 +126,7 @@ graph TD
 
 ### Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - [Node.js 20+ & npm](https://nodejs.org/)
 - [PostgreSQL 16](https://www.postgresql.org/) or Docker/Podman
 - [Podman](https://podman.io/) (optional — for containerized local stack)

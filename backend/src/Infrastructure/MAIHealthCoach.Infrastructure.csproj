@@ -6,10 +6,23 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Application\MAIHealthCoach.Application.csproj" />
     <ProjectReference Include="..\Domain\MAIHealthCoach.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Exposes internal types (e.g. the design-time AppDbContextFactory) to the
+         integration test assembly so wiring can be verified without a database. -->
+    <InternalsVisibleTo Include="MAIHealthCoach.Api.Tests" />
   </ItemGroup>
 </Project>

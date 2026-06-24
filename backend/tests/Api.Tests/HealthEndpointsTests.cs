@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace MAIHealthCoach.Api.Tests;
 
-public sealed class HealthEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointsTests : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public HealthEndpointsTests(WebApplicationFactory<Program> factory)
+    public HealthEndpointsTests(TestWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }

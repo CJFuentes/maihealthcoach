@@ -4,5 +4,11 @@
       "Default": "Debug",
       "Microsoft.AspNetCore": "Information"
     }
+  },
+  "ConnectionStrings": {
+    "Postgres": "Host=localhost;Port=5432;Database=maihealthcoach_dev;Username=postgres;Password=CHANGE_ME"
+  },
+  "Database": {
+    "AutoMigrate": true
   }
 }

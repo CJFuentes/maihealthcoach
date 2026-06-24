@@ -5,6 +5,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2" />
+    <!-- Pin EF Core Relational to match Infrastructure (10.0.9). Mvc.Testing 10.0.2
+         pulls 10.0.4 transitively; this aligns the two and avoids an MSB3277 conflict. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">
@@ -21,5 +24,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Api\MAIHealthCoach.Api.csproj" />
+    <!-- Direct reference makes EF Core / Npgsql types available for the persistence
+         wiring tests and surfaces Infrastructure internals via InternalsVisibleTo. -->
+    <ProjectReference Include="..\..\src\Infrastructure\MAIHealthCoach.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@ using Asp.Versioning;
 using MAIHealthCoach.Api.Middleware;
 using MAIHealthCoach.Application;
 using MAIHealthCoach.Infrastructure;
+using MAIHealthCoach.Infrastructure.Auth;
 using MAIHealthCoach.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
@@ -95,6 +96,13 @@ try
 
     app.UseSerilogRequestLogging();
 
+    // Authentication + authorization sit after request logging (so 401s are still logged
+    // with their correlation ID) and before the endpoints they guard. Anonymous endpoints
+    // (health checks, /api/v1/ping) carry no authorization metadata, so the authorization
+    // middleware lets them through untouched.
+    app.UseAuthentication();
+    app.UseAuthorization();
+
     if (app.Environment.IsDevelopment())
     {
         // Serves /openapi/v1.json. Gated on Development so the production surface
@@ -145,6 +153,24 @@ try
         });
     })
     .WithName("Ping");
+
+    // Protected endpoint: returns the current user profile stub, provisioning the local
+    // User row from the Clerk JWT on first authenticated request. RequireAuthorization
+    // makes the auth middleware enforce the default policy, so a missing/invalid token
+    // yields a 401 before the handler runs.
+    v1.MapGet("/me", async (ICurrentUserService currentUser, CancellationToken ct) =>
+    {
+        var user = await currentUser.GetOrCreateCurrentUserAsync(ct);
+        return Results.Ok(new
+        {
+            id = user.Id,
+            clerkUserId = user.ClerkUserId,
+            email = user.Email,
+            createdAt = user.CreatedAt,
+        });
+    })
+    .WithName("GetCurrentUser")
+    .RequireAuthorization();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

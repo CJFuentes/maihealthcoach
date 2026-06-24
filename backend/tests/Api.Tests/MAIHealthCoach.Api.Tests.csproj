@@ -8,6 +8,15 @@
     <!-- Pin EF Core Relational to match Infrastructure (10.0.9). Mvc.Testing 10.0.2
          pulls 10.0.4 transitively; this aligns the two and avoids an MSB3277 conflict. -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.9" />
+    <!-- SQLite in-memory backs the auth-provisioning tests: a real relational provider that
+         enforces the ClerkUserId unique index (which the EF InMemory provider ignores), so
+         get-or-create + the race path are exercised faithfully without Postgres. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
+    <!-- Override the SQLite native bundle EF Core 10.0.9 pulls transitively (2.1.11), which
+         carries advisory GHSA-2m69-gcr7-jv3q. 3.0.3 resolves it and keeps the build warning-free. -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <!-- Signs locally-issued test JWTs so auth tests never contact Clerk's servers. -->
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4">

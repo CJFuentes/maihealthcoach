@@ -15,14 +15,16 @@ graph TD
         Android["Android (Kotlin / Compose)"]
     end
 
-    subgraph Backend ["Backend (ASP.NET Core Web API — .NET 9)"]
+    subgraph Backend ["Backend (ASP.NET Core Web API — .NET 10)"]
         API["Api Layer<br/>Controllers · Middleware · Auth"]
         App["Application Layer<br/>CQRS Commands/Queries · Service Interfaces"]
         Domain["Domain Layer<br/>Entities · Value Objects · Business Rules"]
         Infra["Infrastructure Layer<br/>EF Core · HTTP Clients · Repositories"]
         API --> App
+        API --> Infra
         App --> Domain
-        App --> Infra
+        Infra --> App
+        Infra --> Domain
     end
 
     subgraph ExternalServices ["External Services"]

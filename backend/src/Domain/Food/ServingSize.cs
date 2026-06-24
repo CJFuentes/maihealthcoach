@@ -83,4 +83,15 @@ public sealed class ServingSize : EntityBase
             UpdatedAt = updatedAt;
         }
     }
+
+    /// <summary>Sets the default flag. Used by the aggregate to promote a serving to the default.</summary>
+    /// <param name="updatedAt">Timestamp of the enclosing aggregate operation, for coherent audit stamps.</param>
+    internal void SetAsDefault(DateTimeOffset updatedAt)
+    {
+        if (!IsDefault)
+        {
+            IsDefault = true;
+            UpdatedAt = updatedAt;
+        }
+    }
 }

@@ -1,3 +1,4 @@
+import { UserButton } from '@clerk/clerk-react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 export default function Layout() {
@@ -10,6 +11,9 @@ export default function Layout() {
           </NavLink>
           <NavLink to="/about">About</NavLink>
         </nav>
+        {/* Clerk account menu: profile + sign-out. Renders nothing when signed out.
+            Sign-out redirect is configured once on <ClerkProvider> (afterSignOutUrl). */}
+        <UserButton />
       </header>
       <main>
         <Outlet />

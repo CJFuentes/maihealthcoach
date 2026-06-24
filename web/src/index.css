@@ -1,0 +1,294 @@
+:root {
+  --color-bg: #f7f8fa;
+  --color-surface: #ffffff;
+  --color-border: #d8dce3;
+  --color-text: #1c2230;
+  --color-muted: #5b6472;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-contrast: #ffffff;
+  --color-error: #b91c1c;
+  --color-error-bg: #fee2e2;
+  --color-success: #15803d;
+  --color-success-bg: #dcfce7;
+  --color-info-bg: #e0edff;
+  --radius: 8px;
+  --space: 1rem;
+  --max-width: 720px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space);
+  padding: 0.75rem 1.25rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+nav[aria-label='Primary'] {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+nav[aria-label='Primary'] a {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--color-muted);
+  font-weight: 500;
+}
+
+nav[aria-label='Primary'] a:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+nav[aria-label='Primary'] a.active {
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin: 0 0 0.5rem;
+}
+
+h2 {
+  font-size: 1.15rem;
+  margin: 1.75rem 0 0.5rem;
+}
+
+a {
+  color: var(--color-primary);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.hint {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+/* Forms */
+form {
+  margin-top: 1rem;
+}
+
+fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin: 0 0 1.25rem;
+  padding: 0.75rem 1rem 1rem;
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 0.35rem;
+}
+
+.units-toggle {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.units-toggle label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+label {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input[aria-invalid='true'],
+select[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.field-error {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+/* Buttons */
+button {
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.button-secondary:hover:not(:disabled) {
+  background: var(--color-bg);
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+}
+
+form > button[type='submit'] {
+  margin-top: 1.25rem;
+}
+
+/* Messages */
+.message {
+  margin: 1rem 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+}
+
+.message-error {
+  color: var(--color-error);
+  background: var(--color-error-bg);
+}
+
+.message-success {
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.message-info {
+  color: var(--color-text);
+  background: var(--color-info-bg);
+}
+
+/* Cards */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.goal-cards {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.goal-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--color-muted);
+}
+
+.goal-value {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.goal-unit {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.goal-computed {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.goal-energy {
+  color: var(--color-muted);
+}

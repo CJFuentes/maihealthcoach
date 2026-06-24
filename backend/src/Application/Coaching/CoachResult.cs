@@ -54,7 +54,10 @@ public enum CoachErrorCategory
 /// </param>
 /// <param name="ModelUsed">
 /// The model identifier that produced the reply (e.g. "claude-sonnet-4-6").
-/// Non-null on success; <see langword="null"/> on failure.
+/// Non-null on success; <see langword="null"/> on failure. When the coach short-circuits a
+/// high-risk request without calling the model, this carries the
+/// <see cref="CoachSafetyResponder.GuardrailModelSentinel"/> value instead of a real model id,
+/// so downstream billing/analytics can recognise and exclude guardrail short-circuits.
 /// </param>
 /// <param name="ErrorCategory">
 /// The failure category. <see cref="CoachErrorCategory.None"/> on success.
@@ -63,22 +66,32 @@ public enum CoachErrorCategory
 /// A user-friendly message the caller may display when <see cref="IsSuccess"/>
 /// is <see langword="false"/>. Never leaks technical details.
 /// </param>
+/// <param name="Disclaimer">
+/// A reusable medical/nutrition disclaimer for clients to surface beneath the reply. Populated
+/// on all successful results — including the high-risk guardrail redirect — and
+/// <see langword="null"/> on failure.
+/// </param>
 public sealed record CoachResult(
     bool IsSuccess,
     string? ReplyText,
     string? ModelUsed,
     CoachErrorCategory ErrorCategory,
-    string? FallbackMessage)
+    string? FallbackMessage,
+    string? Disclaimer = null)
 {
     /// <summary>Creates a successful result.</summary>
     /// <param name="replyText">The assistant reply text.</param>
     /// <param name="modelUsed">The model identifier that produced the reply.</param>
-    public static CoachResult Success(string replyText, string modelUsed) =>
-        new(true, replyText, modelUsed, CoachErrorCategory.None, null);
+    /// <param name="disclaimer">
+    /// An optional client-facing disclaimer to surface beneath the reply. <see langword="null"/>
+    /// when no disclaimer applies.
+    /// </param>
+    public static CoachResult Success(string replyText, string modelUsed, string? disclaimer = null) =>
+        new(true, replyText, modelUsed, CoachErrorCategory.None, null, disclaimer);
 
     /// <summary>Creates a failure result with a friendly fallback message.</summary>
     /// <param name="category">The failure category.</param>
     /// <param name="fallbackMessage">A user-friendly message that never leaks technical detail.</param>
     public static CoachResult Failure(CoachErrorCategory category, string fallbackMessage) =>
-        new(false, null, null, category, fallbackMessage);
+        new(false, null, null, category, fallbackMessage, null);
 }

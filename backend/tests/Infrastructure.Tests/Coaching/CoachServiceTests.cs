@@ -176,6 +176,61 @@ public sealed class CoachServiceTests
         Assert.DoesNotContain("Today's Intake", handler.LastRequestBody);
     }
 
+    [Fact]
+    public async Task AskAsync_WithBenignInput_AttachesSafetyDisclaimer()
+    {
+        var (service, handler) = BuildSut();
+        handler.ResponseFactory = (_, _) => JsonResponse(HttpStatusCode.OK, SuccessResponseJson);
+
+        var result = await service.AskAsync(new CoachRequest("How much protein should I eat?"));
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Disclaimer);
+        Assert.Equal(CoachPromptBuilder.SafetyDisclaimer, result.Disclaimer);
+    }
+
+    [Fact]
+    public async Task AskAsync_WithHighRiskInput_ShortCircuitsWithoutCallingApi()
+    {
+        var (service, handler) = BuildSut();
+        handler.ResponseFactory = (_, _) => JsonResponse(HttpStatusCode.OK, SuccessResponseJson);
+
+        var result = await service.AskAsync(new CoachRequest("How do I purge after eating?"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(CoachSafetyResponder.GuardrailModelSentinel, result.ModelUsed);
+        Assert.Equal(CoachSafetyResponder.HighRiskRedirectText, result.ReplyText);
+        Assert.Equal(CoachPromptBuilder.SafetyDisclaimer, result.Disclaimer);
+        Assert.Null(handler.LastRequest); // The model was never called.
+    }
+
+    [Fact]
+    public async Task AskAsync_WithHighRiskInputButEmptyApiKey_StillReturnsConfigurationError()
+    {
+        var (service, handler) = BuildSut(apiKey: "");
+
+        var result = await service.AskAsync(new CoachRequest("How do I purge after eating?"));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(CoachErrorCategory.ConfigurationError, result.ErrorCategory);
+        Assert.Null(handler.LastRequest); // The key guard runs before classification.
+    }
+
+    [Fact]
+    public async Task AskAsync_WithElevatedRiskInput_AppendsSafetyNoteToReply()
+    {
+        var (service, handler) = BuildSut();
+        handler.ResponseFactory = (_, _) => JsonResponse(HttpStatusCode.OK, SuccessResponseJson);
+
+        var result = await service.AskAsync(new CoachRequest("I want rapid weight loss"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("Here is your coaching advice.", result.ReplyText);
+        Assert.Contains(CoachSafetyResponder.ElevatedRiskSafetyNote, result.ReplyText);
+        Assert.Equal(CoachPromptBuilder.SafetyDisclaimer, result.Disclaimer);
+        Assert.NotNull(handler.LastRequest); // The model WAS called for elevated-risk input.
+    }
+
     private static HttpResponseMessage JsonResponse(HttpStatusCode status, string json) =>
         new(status)
         {

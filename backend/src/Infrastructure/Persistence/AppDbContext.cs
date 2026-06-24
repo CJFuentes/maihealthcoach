@@ -1,3 +1,4 @@
+using MAIHealthCoach.Domain.Food;
 using MAIHealthCoach.Domain.Goals;
 using MAIHealthCoach.Domain.UserProfiles;
 using MAIHealthCoach.Domain.Users;
@@ -30,6 +31,12 @@ public sealed class AppDbContext : DbContext
 
     /// <summary>Manual goal-target overrides per user (issue #17).</summary>
     public DbSet<UserGoalTargets> UserGoalTargets => Set<UserGoalTargets>();
+
+    /// <summary>Foods with nutrition data, from Open Food Facts or user-created (issue #19).</summary>
+    public DbSet<FoodItem> FoodItems => Set<FoodItem>();
+
+    /// <summary>Serving-size portions belonging to a <see cref="FoodItem"/> (issue #19).</summary>
+    public DbSet<ServingSize> ServingSizes => Set<ServingSize>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

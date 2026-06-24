@@ -1,4 +1,6 @@
+using MAIHealthCoach.Application.Coaching;
 using MAIHealthCoach.Infrastructure.Auth;
+using MAIHealthCoach.Infrastructure.Coaching;
 using MAIHealthCoach.Infrastructure.Configuration;
 using MAIHealthCoach.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -32,8 +34,43 @@ public static class DependencyInjection
 
         services.AddClerkAuthentication();
 
-        // Placeholder: repositories and external HTTP clients (Anthropic,
-        // Open Food Facts) will be registered here in later milestones.
+        services.AddCoachingServices();
+
+        // Placeholder: repositories and other external HTTP clients (Open Food Facts)
+        // will be registered here in later milestones.
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the prompt builder, the typed Anthropic <see cref="HttpClient"/>, and the
+    /// <see cref="ICoachService"/> implementation (issue #36).
+    /// </summary>
+    /// <remarks>
+    /// The Anthropic API key is <strong>not</strong> required at registration time — it is
+    /// resolved lazily on the first call. This lets the application build, start, and pass
+    /// health checks with an empty <see cref="AiOptions.ApiKey"/> (CI and local dev without
+    /// secrets). The <c>BaseAddress</c> and <c>Timeout</c> are configured here from
+    /// <see cref="AiOptions"/>; the secret <c>x-api-key</c> header is attached per request
+    /// inside the client, never via <c>DefaultRequestHeaders</c> at startup.
+    /// </remarks>
+    public static IServiceCollection AddCoachingServices(this IServiceCollection services)
+    {
+        // Stateless and dependency-free — a singleton avoids per-request allocations.
+        services.AddSingleton<CoachPromptBuilder>();
+
+        services.AddHttpClient<AnthropicMessagesClient>((serviceProvider, client) =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<AiOptions>>().Value;
+
+            // Ensure the base address ends with '/' so the relative path "v1/messages"
+            // resolves to "{BaseUrl}/v1/messages" rather than dropping the last segment.
+            var baseUrl = options.BaseUrl.TrimEnd('/') + '/';
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+        });
+
+        services.AddScoped<ICoachService, CoachService>();
+
         return services;
     }
 

@@ -1,0 +1,70 @@
+# =============================================================================
+# MAI Health Coach - local development stack (api + postgres)
+#
+# Usage:
+#   cd deploy
+#   cp .env.example .env        # first time only; defaults work for local dev
+#   podman compose up           # or: docker compose up
+#
+# The .env file (gitignored) is loaded automatically by Compose for the
+# ${VAR} substitutions below.
+# =============================================================================
+
+services:
+
+  # -- PostgreSQL 16 ----------------------------------------------------------
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      # Named volume -> data persists across `compose down` / `up`.
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    ports:
+      # Bind to localhost only so the host can connect with psql for debugging.
+      - "127.0.0.1:5432:5432"
+
+  # -- MAI Health Coach API ---------------------------------------------------
+  api:
+    build:
+      # Context is the repo root so the Containerfile can COPY backend/src/...
+      context: ..
+      # dockerfile path is relative to the build context (the repo root).
+      dockerfile: deploy/backend/Containerfile
+    restart: unless-stopped
+    environment:
+      # Development => Program.cs skips UseHttpsRedirection, so plain HTTP works.
+      ASPNETCORE_ENVIRONMENT: Development
+      # Already set by the base image; restated here to document the contract.
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # Consumed via IConfiguration["ConnectionStrings:Default"] (the double
+      # underscore maps to the nested config path). No code reads this yet
+      # (Infrastructure DI is a placeholder), but the API is DB-ready for when
+      # EF Core + Npgsql are wired up in a later milestone.
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+# -- Named volumes ------------------------------------------------------------
+volumes:
+  pgdata:
+    # Created as `deploy_pgdata`. Survives `compose down`; wipe with
+    # `podman compose down -v` or `podman volume rm deploy_pgdata`.

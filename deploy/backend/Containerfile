@@ -1,0 +1,66 @@
+# =============================================================================
+# MAI Health Coach - API Containerfile
+# Multi-stage: sdk:10.0 (build) -> aspnet:10.0 (runtime, non-root)
+#
+# Build context MUST be the repo root so the COPY backend/... paths resolve.
+# Build manually from repo root with:
+#   podman build -f deploy/backend/Containerfile -t maihealthcoach-api:local .
+#   docker build -f deploy/backend/Containerfile -t maihealthcoach-api:local .
+# =============================================================================
+
+# -- Stage 1: build -----------------------------------------------------------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# Copy Directory.Build.props first - it sets TargetFramework (net10.0) for every
+# project under src/, so restore needs it present and as an ancestor of the
+# project directories. It must live at /src/src/Directory.Build.props.
+COPY backend/src/Directory.Build.props src/
+
+# Copy the project manifests before the source so the restore layer is cached
+# and only invalidated when a .csproj changes (not on every source edit).
+# NOTE: we deliberately do NOT copy the .sln. The solution references the three
+# test projects under backend/tests/, which are not in this image's context;
+# restoring the .sln would fail. Restoring the Api project transitively pulls
+# Application -> Infrastructure -> Domain, i.e. the exact runtime closure.
+COPY backend/src/Api/MAIHealthCoach.Api.csproj                       src/Api/
+COPY backend/src/Application/MAIHealthCoach.Application.csproj       src/Application/
+COPY backend/src/Domain/MAIHealthCoach.Domain.csproj                src/Domain/
+COPY backend/src/Infrastructure/MAIHealthCoach.Infrastructure.csproj src/Infrastructure/
+
+RUN dotnet restore src/Api/MAIHealthCoach.Api.csproj
+
+# Copy the full source tree (src/ only - test projects are not needed at runtime).
+COPY backend/src/ src/
+
+RUN dotnet publish src/Api/MAIHealthCoach.Api.csproj \
+        --configuration Release \
+        --no-restore \
+        --output /app/publish
+
+# -- Stage 2: final (runtime, non-root) ---------------------------------------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+
+# Install curl for the container HEALTHCHECK (the aspnet image ships neither
+# curl nor wget). Done as root, before dropping to the non-root user.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /app/publish .
+
+# The aspnet:10.0 image ships a pre-created non-root user 'app' (uid/gid 1654).
+# Use the named user for determinism (it is guaranteed to exist in this base).
+USER app
+
+# The base image sets ASPNETCORE_HTTP_PORTS=8080, binding http://+:8080 (all
+# interfaces) so the compose port mapping can reach it. EXPOSE documents this.
+EXPOSE 8080
+
+# Image-level liveness probe (uses the curl installed above). compose.yml also
+# defines a service healthcheck; this makes a bare `podman run` self-describing.
+HEALTHCHECK --interval=10s --timeout=5s --retries=5 --start-period=15s \
+    CMD curl -f http://localhost:8080/healthz || exit 1
+
+ENTRYPOINT ["dotnet", "MAIHealthCoach.Api.dll"]

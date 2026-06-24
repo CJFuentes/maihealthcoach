@@ -1,0 +1,53 @@
+# =============================================================================
+# .containerignore - read by Podman/Buildah from the BUILD CONTEXT ROOT
+# (the repo root, since deploy/compose.yml sets build.context: ..).
+#
+# Keeps the build context small. Must NOT exclude anything the API image build
+# needs: backend/src/**, the src .csproj files, or Directory.Build.props.
+# =============================================================================
+
+# Non-backend subtrees (not needed for the API image)
+web/
+ios/
+android/
+docs/
+deploy/
+.github/
+.git/
+
+# Backend build outputs and test projects (tests are not shipped at runtime)
+backend/tests/
+**/bin/
+**/obj/
+**/TestResults/
+**/publish/
+
+# IDE / editor artifacts
+.vs/
+.vscode/
+.idea/
+**/*.user
+**/*.suo
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Local secrets / certs (defensive - should never be in the tree anyway)
+**/.env
+**/.env.*
+!**/.env.example
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/*.pfx
+**/*.p12
+**/*.pem
+**/*.key
+
+# Root-level files not needed in the build context
+README.md
+CONTRIBUTING.md
+LICENSE
+.editorconfig
+.gitattributes
+.gitignore

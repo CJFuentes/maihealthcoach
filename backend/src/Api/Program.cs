@@ -1,4 +1,5 @@
 using System.Reflection;
+using Asp.Versioning;
 using MAIHealthCoach.Api.Middleware;
 using MAIHealthCoach.Application;
 using MAIHealthCoach.Infrastructure;
@@ -43,10 +44,43 @@ try
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
-    builder.Services.AddOpenApi();
+    // API versioning — URL-segment reader so /api/v{n}/... routes are authoritative.
+    // AddApiExplorer wires Asp.Versioning into the API description provider so
+    // Microsoft.AspNetCore.OpenApi can discover versioned endpoints.
+    // SubstituteApiVersionInUrl=true replaces the {version:apiVersion} token with the
+    // literal version number in each ApiDescription.RelativePath, so the OpenAPI
+    // document shows /api/v1/ping instead of /api/v{version}/ping.
+    builder.Services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = new UrlSegmentApiVersionReader();
+        })
+        .AddApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
+
+    // Named OpenAPI document "v1" from Microsoft.AspNetCore.OpenApi, served at
+    // /openapi/v1.json. Asp.Versioning's ApiExplorer sets ApiDescription.GroupName to
+    // "v1" for versioned endpoints. The `GroupName == null` clause is a safety net for any
+    // FUTURE unversioned minimal-API endpoint (e.g. a /status route registered outside a
+    // versioned group). Note: health-check endpoints (MapHealthChecks) are not part of the
+    // API description pipeline, so /healthz never appears in this document — by design.
+    builder.Services.AddOpenApi("v1", options =>
+    {
+        options.ShouldInclude = desc =>
+            desc.GroupName == null || desc.GroupName == "v1";
+    });
 
     var app = builder.Build();
 
+    // Apply pending EF Core migrations automatically in Development when opted in.
+    // Guarded by Database:AutoMigrate (default false in appsettings.json) so integration
+    // tests and CI never attempt a database connection. Dev-only by design — production
+    // applies migrations via `dotnet ef database update` in the deploy pipeline.
     if (app.Environment.IsDevelopment()
         && app.Configuration.GetValue<bool>("Database:AutoMigrate"))
     {
@@ -63,6 +97,8 @@ try
 
     if (app.Environment.IsDevelopment())
     {
+        // Serves /openapi/v1.json. Gated on Development so the production surface
+        // stays minimal. Integration tests run as Development (see TestWebApplicationFactory).
         app.MapOpenApi();
     }
     else
@@ -85,7 +121,16 @@ try
         Predicate = check => check.Tags.Contains(MAIHealthCoach.Infrastructure.DependencyInjection.ReadyTag),
     });
 
-    app.MapGet("/api/v1/ping", () =>
+    // ── Versioned API endpoints ───────────────────────────────────────────────────
+    // NewVersionedApi creates a versioned route group tracked by the API explorer.
+    // HasApiVersion declares the version that owns the group; the route prefix includes
+    // {version:apiVersion} so UrlSegmentApiVersionReader can match it. The literal
+    // request /api/v1/ping resolves here, and (with SubstituteApiVersionInUrl) the
+    // OpenAPI document reports the path as /api/v1/ping.
+    var api = app.NewVersionedApi("MAIHealthCoach");
+    var v1 = api.MapGroup("api/v{version:apiVersion}").HasApiVersion(new ApiVersion(1, 0));
+
+    v1.MapGet("/ping", () =>
     {
         var version = typeof(Program).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
@@ -96,7 +141,7 @@ try
         {
             service = "MAIHealthCoach.Api",
             version,
-            timestamp = DateTime.UtcNow,
+            timestamp = DateTimeOffset.UtcNow,
         });
     })
     .WithName("Ping");

@@ -83,8 +83,22 @@ public sealed class HealthEndpointsTests : IClassFixture<TestWebApplicationFacto
         Assert.NotNull(payload);
         Assert.Equal("MAIHealthCoach.Api", payload!.Service);
         Assert.False(string.IsNullOrWhiteSpace(payload.Version));
-        Assert.True(payload.Timestamp <= DateTime.UtcNow);
+        Assert.True(payload.Timestamp <= DateTimeOffset.UtcNow);
     }
 
-    private sealed record PingResponse(string Service, string Version, DateTime Timestamp);
+    [Fact]
+    public async Task Ping_ReportsSupportedApiVersions()
+    {
+        var response = await _client.GetAsync("/api/v1/ping");
+        response.EnsureSuccessStatusCode();
+
+        // ReportApiVersions=true makes the versioned API advertise the versions it
+        // supports, so clients can discover/negotiate them. v1 must be listed.
+        Assert.True(
+            response.Headers.TryGetValues("api-supported-versions", out var values),
+            "Response is missing the 'api-supported-versions' header.");
+        Assert.Contains("1.0", values);
+    }
+
+    private sealed record PingResponse(string Service, string Version, DateTimeOffset Timestamp);
 }

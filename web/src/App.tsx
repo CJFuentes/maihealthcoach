@@ -6,6 +6,7 @@ import ProfilePage from './pages/ProfilePage';
 import GoalsPage from './pages/GoalsPage';
 import DiaryPage from './pages/DiaryPage';
 import WaterPage from './pages/WaterPage';
+import ExercisePage from './pages/ExercisePage';
 import ScanPage from './pages/ScanPage';
 import CoachPage from './pages/CoachPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="goals" element={<GoalsPage />} />
           <Route path="diary" element={<DiaryPage />} />
           <Route path="water" element={<WaterPage />} />
+          <Route path="exercise" element={<ExercisePage />} />
           <Route path="scan" element={<ScanPage />} />
           <Route path="coach" element={<CoachPage />} />
           <Route path="*" element={<NotFoundPage />} />

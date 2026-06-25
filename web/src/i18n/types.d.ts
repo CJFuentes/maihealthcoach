@@ -11,6 +11,7 @@ import type scan from './locales/en/scan.json';
 import type auth from './locales/en/auth.json';
 import type coach from './locales/en/coach.json';
 import type water from './locales/en/water.json';
+import type exercise from './locales/en/exercise.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -26,6 +27,7 @@ declare module 'i18next' {
       auth: typeof auth;
       coach: typeof coach;
       water: typeof water;
+      exercise: typeof exercise;
     };
   }
 }

@@ -12,6 +12,7 @@ import type auth from './locales/en/auth.json';
 import type coach from './locales/en/coach.json';
 import type water from './locales/en/water.json';
 import type exercise from './locales/en/exercise.json';
+import type dashboard from './locales/en/dashboard.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -28,6 +29,7 @@ declare module 'i18next' {
       coach: typeof coach;
       water: typeof water;
       exercise: typeof exercise;
+      dashboard: typeof dashboard;
     };
   }
 }

@@ -161,6 +161,10 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(CoachChatOptions.SectionName));
         services.AddSingleton<IValidateOptions<CoachChatOptions>, CoachChatOptionsValidator>();
 
+        services.AddOptions<RateLimitingOptions>()
+            .Bind(configuration.GetSection(RateLimitingOptions.SectionName));
+        services.AddSingleton<IValidateOptions<RateLimitingOptions>, RateLimitingOptionsValidator>();
+
         services.AddOptions<OpenFoodFactsOptions>()
             .Bind(configuration.GetSection(OpenFoodFactsOptions.SectionName));
         services.AddSingleton<IValidateOptions<OpenFoodFactsOptions>, OpenFoodFactsOptionsValidator>();

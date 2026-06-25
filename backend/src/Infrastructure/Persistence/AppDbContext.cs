@@ -60,6 +60,9 @@ public sealed class AppDbContext : DbContext
     /// <summary>Exercise activity catalog: seeded shared activities and user-created custom activities (issue #33).</summary>
     public DbSet<ExerciseActivity> ExerciseActivities => Set<ExerciseActivity>();
 
+    /// <summary>Exercise log entries, one per logged activity per day, with a snapshotted calories-burned estimate (issue #34).</summary>
+    public DbSet<ExerciseLogEntry> ExerciseLogEntries => Set<ExerciseLogEntry>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

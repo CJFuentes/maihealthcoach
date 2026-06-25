@@ -1,5 +1,7 @@
 using System.Net;
+using System.Text.Json;
 using MAIHealthCoach.Application.Coaching;
+using MAIHealthCoach.Domain.Coaching;
 using MAIHealthCoach.Infrastructure.Coaching;
 using MAIHealthCoach.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -229,6 +231,55 @@ public sealed class CoachServiceTests
         Assert.Contains(CoachSafetyResponder.ElevatedRiskSafetyNote, result.ReplyText);
         Assert.Equal(CoachPromptBuilder.SafetyDisclaimer, result.Disclaimer);
         Assert.NotNull(handler.LastRequest); // The model WAS called for elevated-risk input.
+    }
+
+    [Fact]
+    public async Task AskAsync_WithHistory_IncludesPriorTurnsBeforeFinalUserTurn()
+    {
+        var (service, handler) = BuildSut();
+        handler.ResponseFactory = (_, _) => JsonResponse(HttpStatusCode.OK, SuccessResponseJson);
+
+        var history = new[]
+        {
+            new CoachConversationTurn(CoachMessageRole.User, "earlier question"),
+            new CoachConversationTurn(CoachMessageRole.Assistant, "earlier answer"),
+        };
+
+        await service.AskAsync(new CoachRequest("a brand new follow-up question", History: history));
+
+        // The serialized request body's messages array must be, in order:
+        //   [ user "earlier question", assistant "earlier answer", user <final turn> ].
+        var body = handler.LastRequestBody!;
+        using var document = JsonDocument.Parse(body);
+        var messages = document.RootElement.GetProperty("messages");
+
+        Assert.Equal(3, messages.GetArrayLength());
+
+        Assert.Equal("user", messages[0].GetProperty("role").GetString());
+        Assert.Equal("earlier question", messages[0].GetProperty("content").GetString());
+
+        Assert.Equal("assistant", messages[1].GetProperty("role").GetString());
+        Assert.Equal("earlier answer", messages[1].GetProperty("content").GetString());
+
+        Assert.Equal("user", messages[2].GetProperty("role").GetString());
+        Assert.Contains("a brand new follow-up question", messages[2].GetProperty("content").GetString());
+    }
+
+    [Fact]
+    public async Task AskAsync_NullHistory_SendsSingleUserTurn()
+    {
+        var (service, handler) = BuildSut();
+        handler.ResponseFactory = (_, _) => JsonResponse(HttpStatusCode.OK, SuccessResponseJson);
+
+        await service.AskAsync(new CoachRequest("just one question", History: null));
+
+        var body = handler.LastRequestBody!;
+        using var document = JsonDocument.Parse(body);
+        var messages = document.RootElement.GetProperty("messages");
+
+        Assert.Equal(1, messages.GetArrayLength());
+        Assert.Equal("user", messages[0].GetProperty("role").GetString());
+        Assert.Contains("just one question", messages[0].GetProperty("content").GetString());
     }
 
     private static HttpResponseMessage JsonResponse(HttpStatusCode status, string json) =>

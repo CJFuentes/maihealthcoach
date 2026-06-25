@@ -1,3 +1,4 @@
+using MAIHealthCoach.Domain.Coaching;
 using MAIHealthCoach.Domain.Diary;
 using MAIHealthCoach.Domain.Food;
 using MAIHealthCoach.Domain.Goals;
@@ -44,6 +45,12 @@ public sealed class AppDbContext : DbContext
 
     /// <summary>User-to-food "favorite" markers for quick re-logging (issue #24).</summary>
     public DbSet<UserFavoriteFood> UserFavoriteFoods => Set<UserFavoriteFood>();
+
+    /// <summary>MAI coach chat conversations, one per chat thread (issue #39).</summary>
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+
+    /// <summary>Messages within coach chat conversations, user and assistant turns (issue #39).</summary>
+    public DbSet<Message> CoachMessages => Set<Message>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

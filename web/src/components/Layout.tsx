@@ -25,6 +25,7 @@ export default function Layout() {
           <NavLink to="/goals">{t('goals')}</NavLink>
           <NavLink to="/diary">{t('diary')}</NavLink>
           <NavLink to="/scan">{t('scan')}</NavLink>
+          <NavLink to="/coach">{t('coach')}</NavLink>
         </nav>
         {/* Clerk account menu: profile + sign-out. Renders nothing when signed out.
             Sign-out redirect is configured once on <ClerkProvider> (afterSignOutUrl). */}

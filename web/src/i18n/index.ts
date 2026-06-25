@@ -9,6 +9,7 @@ import profile from './locales/en/profile.json';
 import goals from './locales/en/goals.json';
 import scan from './locales/en/scan.json';
 import auth from './locales/en/auth.json';
+import coach from './locales/en/coach.json';
 
 /**
  * Namespaces bundled into the app. Each maps to one JSON file under
@@ -39,9 +40,9 @@ void i18n.use(initReactI18next).init({
   lng: readStoredLang(),
   fallbackLng: 'en',
   defaultNS: 'common',
-  ns: ['common', 'nav', 'home', 'about', 'profile', 'goals', 'scan', 'auth'],
+  ns: ['common', 'nav', 'home', 'about', 'profile', 'goals', 'scan', 'auth', 'coach'],
   resources: {
-    en: { common, nav, home, about, profile, goals, scan, auth },
+    en: { common, nav, home, about, profile, goals, scan, auth, coach },
   },
   interpolation: {
     // React already escapes interpolated values, so i18next must not double-escape.

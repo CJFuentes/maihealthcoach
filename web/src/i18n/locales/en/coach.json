@@ -1,0 +1,52 @@
+{
+  "title": "Coach",
+  "tabs": {
+    "chat": "Chat",
+    "mealSuggestions": "Meal Suggestions",
+    "nudge": "Nudge"
+  },
+  "chat": {
+    "loading": "Loading conversation…",
+    "historyLoadError": "Could not load conversation history — {{message}}",
+    "inputLabel": "Message",
+    "inputPlaceholder": "Ask your coach anything…",
+    "sendButton": "Send",
+    "sending": "Sending…",
+    "emptyHistory": "No messages yet. Start the conversation below.",
+    "you": "You",
+    "coach": "Coach",
+    "disclaimer": "Disclaimer: {{text}}",
+    "rateLimited": "You're sending messages too quickly. Please wait a moment and try again.",
+    "sendError": "Could not send message — {{message}}",
+    "validationError": "Your message could not be sent. Please check it and try again.",
+    "conversationNotFound": "This conversation was not found. A new conversation will start with your next message.",
+    "serviceUnavailable": "The coach service is temporarily unavailable. Please try again later.",
+    "unknownError": "Unknown error"
+  },
+  "mealSuggestions": {
+    "loading": "Loading meal suggestions…",
+    "loadError": "Could not load meal suggestions — {{message}}",
+    "noProfile": "Complete your profile to receive personalised meal suggestions.",
+    "incompleteProfile": "Your profile is missing some required information. Please complete it to receive meal suggestions.",
+    "completeProfileLink": "Complete your profile",
+    "empty": "No meal suggestions available right now.",
+    "disclaimer": "Disclaimer: {{text}}",
+    "remaining": "Remaining today: {{calories}} kcal · {{protein}} g protein · {{carbs}} g carbs · {{fat}} g fat",
+    "serviceUnavailable": "The coach service is temporarily unavailable. Please try again later.",
+    "unknownError": "Unknown error",
+    "card": {
+      "calories": "{{value}} kcal",
+      "protein": "Protein: {{value}} g",
+      "carbs": "Carbs: {{value}} g",
+      "fat": "Fat: {{value}} g",
+      "rationale": "Why: {{text}}"
+    }
+  },
+  "nudge": {
+    "loading": "Loading your nudge…",
+    "loadError": "Could not load nudge — {{message}}",
+    "disclaimer": "Disclaimer: {{text}}",
+    "serviceUnavailable": "The coach service is temporarily unavailable. Please try again later.",
+    "unknownError": "Unknown error"
+  }
+}

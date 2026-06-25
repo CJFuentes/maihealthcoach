@@ -6,6 +6,7 @@ import ProfilePage from './pages/ProfilePage';
 import GoalsPage from './pages/GoalsPage';
 import DiaryPage from './pages/DiaryPage';
 import ScanPage from './pages/ScanPage';
+import CoachPage from './pages/CoachPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="goals" element={<GoalsPage />} />
           <Route path="diary" element={<DiaryPage />} />
           <Route path="scan" element={<ScanPage />} />
+          <Route path="coach" element={<CoachPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

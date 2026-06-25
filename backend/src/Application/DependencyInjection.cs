@@ -1,3 +1,4 @@
+using MAIHealthCoach.Application.Exercise;
 using MAIHealthCoach.Application.Goals;
 using MAIHealthCoach.Application.MealSuggestions;
 using MAIHealthCoach.Application.Nudges;
@@ -15,6 +16,10 @@ public static class DependencyInjection
         // GoalsCalculator is stateless and dependency-free — a singleton avoids
         // repeated allocations per request (issue #17).
         services.AddSingleton<GoalsCalculator>();
+
+        // CaloriesBurnedCalculator is stateless and dependency-free — a singleton avoids
+        // repeated allocations per request (issue #33). Consumed by the exercise log (#34).
+        services.AddSingleton<CaloriesBurnedCalculator>();
 
         // Meal suggestions (issue #37) orchestrate per-request coaching calls — scoped.
         services.AddScoped<IMealSuggestionService, MealSuggestionService>();

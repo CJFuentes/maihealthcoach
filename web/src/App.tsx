@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
+import DashboardPage from './pages/DashboardPage';
 import AboutPage from './pages/AboutPage';
 import ProfilePage from './pages/ProfilePage';
 import GoalsPage from './pages/GoalsPage';
@@ -29,7 +29,7 @@ export default function App() {
       {/* Protected app shell — RequireAuth redirects signed-out users to /sign-in. */}
       <Route element={<RequireAuth />}>
         <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />
+          <Route index element={<DashboardPage />} />
           <Route path="about" element={<AboutPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="goals" element={<GoalsPage />} />

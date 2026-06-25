@@ -48,6 +48,10 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddInfrastructureHealthChecks();
 
+    // Per-user rate limiting for the coach chat send endpoint (issue #39). The policy reads
+    // CoachChatOptions at request time so configuration overrides apply.
+    builder.Services.AddCoachChatRateLimiter();
+
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -108,6 +112,11 @@ try
     // middleware lets them through untouched.
     app.UseAuthentication();
     app.UseAuthorization();
+
+    // Rate limiting sits after authentication/authorization so the per-user partition key can
+    // read the authenticated principal's 'sub' claim (issue #39). Endpoints opt in via
+    // RequireRateLimiting; everything else passes through unthrottled.
+    app.UseRateLimiter();
 
     if (app.Environment.IsDevelopment())
     {

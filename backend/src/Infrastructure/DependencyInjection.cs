@@ -157,6 +157,10 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(AiOptions.SectionName));
         services.AddSingleton<IValidateOptions<AiOptions>, AiOptionsValidator>();
 
+        services.AddOptions<CoachChatOptions>()
+            .Bind(configuration.GetSection(CoachChatOptions.SectionName));
+        services.AddSingleton<IValidateOptions<CoachChatOptions>, CoachChatOptionsValidator>();
+
         services.AddOptions<OpenFoodFactsOptions>()
             .Bind(configuration.GetSection(OpenFoodFactsOptions.SectionName));
         services.AddSingleton<IValidateOptions<OpenFoodFactsOptions>, OpenFoodFactsOptionsValidator>();

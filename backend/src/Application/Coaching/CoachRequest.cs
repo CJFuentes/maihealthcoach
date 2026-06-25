@@ -29,7 +29,12 @@ public enum CoachModelTier
 /// <param name="ModelTier">
 /// Selects the Claude model tier. Defaults to <see cref="CoachModelTier.Default"/>.
 /// </param>
+/// <param name="History">
+/// Prior conversation turns (chronological, user/assistant), supplied by the chat feature (#39)
+/// to enable multi-turn context. Null/empty for single-shot callers (#37/#38).
+/// </param>
 public sealed record CoachRequest(
     string UserMessage,
     CoachingContext? Context = null,
-    CoachModelTier ModelTier = CoachModelTier.Default);
+    CoachModelTier ModelTier = CoachModelTier.Default,
+    IReadOnlyList<CoachConversationTurn>? History = null);

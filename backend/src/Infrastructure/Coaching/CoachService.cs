@@ -1,4 +1,5 @@
 using MAIHealthCoach.Application.Coaching;
+using MAIHealthCoach.Domain.Coaching;
 using MAIHealthCoach.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -86,12 +87,32 @@ internal sealed class CoachService : ICoachService
         var systemPrompt = _promptBuilder.BuildSystemPrompt();
         var userContent = _promptBuilder.BuildUserContent(request.UserMessage, request.Context);
 
+        // Assemble the messages array as [...prior history turns..., final user turn]. History is
+        // mapped straight through — the chat feature (#39) guarantees it is chronological, starts on
+        // a user turn, and alternates. When History is null/empty (single-shot #37/#38 callers) the
+        // array reduces to the single user turn, identical to the pre-history behaviour. Only the new
+        // UserMessage carries the structured context (built above); prior turns are verbatim.
+        var messages = new List<AnthropicMessage>();
+        if (request.History is { Count: > 0 } history)
+        {
+            foreach (var turn in history)
+            {
+                messages.Add(new AnthropicMessage
+                {
+                    Role = turn.Role == CoachMessageRole.User ? "user" : "assistant",
+                    Content = turn.Content,
+                });
+            }
+        }
+
+        messages.Add(new AnthropicMessage { Role = "user", Content = userContent });
+
         var anthropicRequest = new AnthropicRequest
         {
             Model = modelId,
             MaxTokens = DefaultMaxTokens,
             System = systemPrompt,
-            Messages = [new AnthropicMessage { Role = "user", Content = userContent }],
+            Messages = messages,
         };
 
         // 5. Send and map.

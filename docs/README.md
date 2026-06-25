@@ -8,6 +8,7 @@ Architecture Decision Records (ADRs), and API documentation.
 | File / Folder       | Purpose                                               |
 |---------------------|-------------------------------------------------------|
 | `architecture.md`   | Canonical system architecture diagram (mirrored in root README) |
+| `deployment-runbook.md` | Production deployment runbook (Podman Quadlet + systemd) — companion to `deploy/prod/` |
 | `coaching-safety-guardrails.md` | AI coaching safety policy: prohibited topics, disclaimers, risk categories, red-team prompts |
 | `adr/`              | Architecture Decision Records                         |
 | `adr/template.md`   | ADR template                                          |

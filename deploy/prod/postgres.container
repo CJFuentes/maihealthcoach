@@ -1,0 +1,54 @@
+# =============================================================================
+# MAI Health Coach - PostgreSQL 16 Quadlet container unit (production)
+#
+# Quadlet generates `maihealthcoach-postgres.service` from this file. It depends
+# (auto-injected by Quadlet) on the network and volume units referenced below -
+# do NOT add those After=/Requires= lines by hand.
+#
+# Secrets: POSTGRES_PASSWORD is injected from a Podman secret, never from a file.
+#   echo -n 'STRONG_DB_PASSWORD' | podman secret create maihc-postgres-password -
+#
+# No host port is published: the API reaches Postgres over the shared network by
+# the container name `maihealthcoach-postgres`. If you need psql access from the
+# host for debugging, temporarily add `PublishPort=127.0.0.1:5432:5432` and
+# reload - do not leave it published in production.
+#
+# Install + activate: see deploy/prod/README.md and docs/deployment-runbook.md.
+# =============================================================================
+
+[Unit]
+Description=MAI Health Coach PostgreSQL 16
+
+[Container]
+Image=docker.io/library/postgres:16
+ContainerName=maihealthcoach-postgres
+
+Network=maihealthcoach.network
+Volume=maihealthcoach-pgdata.volume:/var/lib/postgresql/data
+
+# Non-secret database identity. Keep in sync with ConnectionStrings__Postgres
+# in the API's env (Username / Database).
+Environment=POSTGRES_USER=maihc
+Environment=POSTGRES_DB=maihealthcoach
+
+# Secret: the database superuser password (injected as the POSTGRES_PASSWORD env
+# the postgres image expects). Create the secret before first start (see above).
+Secret=maihc-postgres-password,type=env,target=POSTGRES_PASSWORD
+
+# Health: pg_isready ships with the postgres image (curl does NOT). The API's
+# /healthz/ready depends on this being green.
+HealthCmd=pg_isready -U maihc -d maihealthcoach
+HealthInterval=5s
+HealthTimeout=5s
+HealthRetries=10
+HealthStartPeriod=10s
+
+[Service]
+# systemd-managed restart (the Quadlet equivalent of compose `restart: unless-stopped`).
+Restart=always
+TimeoutStartSec=120
+
+[Install]
+# Required for `systemctl enable` to take effect so the service starts on boot.
+# Rootless additionally needs `loginctl enable-linger <user>` (see runbook).
+WantedBy=default.target

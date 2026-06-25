@@ -10,6 +10,7 @@ using MAIHealthCoach.Api.Features.Goals;
 using MAIHealthCoach.Api.Features.Profile;
 using MAIHealthCoach.Api.Features.Streaks;
 using MAIHealthCoach.Api.Features.Summary;
+using MAIHealthCoach.Api.Features.Trends;
 using MAIHealthCoach.Api.Features.Water;
 using MAIHealthCoach.Api.Middleware;
 using MAIHealthCoach.Api.Observability;
@@ -227,6 +228,10 @@ try
     // active-day streak (diary OR water) and 7/30-day calorie + water adherence vs goal targets.
     v1.MapStreaksEndpoints();
     v1.MapDashboardEndpoints();
+
+    // Trends endpoint (issue #43): authenticated GET /api/v1/me/trends — weight + calorie/water
+    // daily time-series over a resolved from/to/range window.
+    v1.MapTrendsEndpoints();
 
     // Custom foods, favorites & recents endpoints (issue #24): authenticated CRUD over
     // /api/v1/me/foods plus /me/foods/{id}/favorite and the /me/foods/favorites and

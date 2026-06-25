@@ -1,0 +1,29 @@
+# =============================================================================
+# MAI Health Coach - Podman Quadlet network definition (production)
+#
+# Creates a bridge network shared by the postgres and api containers so the API
+# can reach Postgres by container name (maihealthcoach-postgres). It is NOT an
+# "internal" network: the API needs outbound egress to api.anthropic.com (Claude)
+# and the Clerk JWKS endpoint, which Internal=true would block. Postgres has no
+# published host port - it is reachable only over this network by name.
+#
+# Install to (rootless, recommended): ~/.config/containers/systemd/
+#            (rootful):               /etc/containers/systemd/
+# Then:      systemctl --user daemon-reload   (rootless)
+#            sudo systemctl daemon-reload      (rootful)
+#
+# Quadlet generates `maihealthcoach-network.service` from this file. Container
+# units reference it with `Network=maihealthcoach.network` (by file name); Quadlet
+# auto-injects the After=/Requires= on the generated service, so you do NOT add
+# those dependencies by hand.
+# =============================================================================
+
+[Unit]
+Description=MAI Health Coach container network
+
+[Network]
+Driver=bridge
+Label=app=maihealthcoach
+
+[Install]
+WantedBy=default.target

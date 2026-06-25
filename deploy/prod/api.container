@@ -1,0 +1,80 @@
+# =============================================================================
+# MAI Health Coach - API Quadlet container unit (production)
+#
+# Quadlet generates `maihealthcoach-api.service` from this file. The network
+# dependency is auto-injected by Quadlet from `Network=`. The only dependency we
+# add by hand is ordering on Postgres so the API starts after the DB service.
+#
+# BEFORE FIRST START / EVERY UPDATE: apply EF Core migrations out-of-band - the
+# app does NOT auto-migrate in Production (see docs/deployment-runbook.md s4).
+#
+# PIN the image to an immutable tag (never :latest) so rollbacks are deterministic.
+#
+# Secrets (create before first start):
+#   echo -n 'Host=maihealthcoach-postgres;Port=5432;Database=maihealthcoach;Username=maihc;Password=STRONG_DB_PASSWORD' \
+#     | podman secret create maihc-connstr -
+#   echo -n 'sk-ant-REAL-ANTHROPIC-KEY' | podman secret create maihc-ai-api-key -
+#
+# Non-secret config lives in an absolute env file (NOT relative to $HOME):
+#   /etc/maihealthcoach/prod.env   (chmod 600, owned by the service user)
+#
+# Install + activate: see deploy/prod/README.md and docs/deployment-runbook.md.
+# =============================================================================
+
+[Unit]
+Description=MAI Health Coach API
+# Order after Postgres. The API additionally self-heals via its own /healthz/ready
+# healthcheck + Restart=always until the DB is reachable, so a hard BindsTo is not
+# required; use BindsTo=maihealthcoach-postgres.service if you want the API stopped
+# whenever Postgres stops.
+After=maihealthcoach-postgres.service
+Wants=maihealthcoach-postgres.service
+
+[Container]
+# Pin to a specific, immutable tag - bump this on each deploy. Never :latest.
+Image=ghcr.io/CJFuentes/maihealthcoach-api:1.0.0
+ContainerName=maihealthcoach-api
+
+Network=maihealthcoach.network
+
+# Publish on host loopback ONLY. A reverse proxy terminates TLS and forwards
+# plain HTTP to 127.0.0.1:8081. Do NOT bind 0.0.0.0 - see the HTTPS redirect-loop
+# note in docs/deployment-runbook.md s12 (the app enables UseHttpsRedirection in
+# Production and has no ForwardedHeaders middleware).
+PublishPort=127.0.0.1:8081:8080
+
+# Non-secret configuration (Clerk public metadata, Ai model/base-url, OFF, OTel,
+# rate limiting). Absolute path - do not rely on %h / relative-to-home.
+EnvironmentFile=/etc/maihealthcoach/prod.env
+
+# Runtime behaviour. Production disables the dev-only auto-migrate path and emits
+# compact JSON logs to stdout (captured by journald).
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_HTTP_PORTS=8080
+Environment=Database__AutoMigrate=false
+
+# Secrets injected as env vars. The full connection string is a single secret so
+# the DB password never lands in any on-disk env file.
+Secret=maihc-connstr,type=env,target=ConnectionStrings__Postgres
+Secret=maihc-ai-api-key,type=env,target=Ai__ApiKey
+
+# Health: curl is installed in the API image. Use /healthz/ready so the unit is
+# only healthy once the DB is reachable (matches compose intent / AC1).
+HealthCmd=curl -f http://localhost:8080/healthz/ready || exit 1
+HealthInterval=10s
+HealthTimeout=5s
+HealthRetries=5
+HealthStartPeriod=20s
+
+# Hardening: the API binds high port 8080 as the non-root `app` user (uid 1654)
+# baked into the image, so NET_BIND_SERVICE is NOT needed and all caps can be
+# dropped. (If the in-container port is ever changed to <1024 this must change.)
+DropCapability=all
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

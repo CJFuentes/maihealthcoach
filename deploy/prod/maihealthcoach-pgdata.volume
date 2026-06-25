@@ -1,0 +1,28 @@
+# =============================================================================
+# MAI Health Coach - Podman Quadlet named volume for PostgreSQL data (production)
+#
+# Persists the Postgres data directory across container restarts, image updates,
+# and reboots. Quadlet generates `maihealthcoach-pgdata-volume.service` from this
+# file. The postgres container references it with
+#   Volume=maihealthcoach-pgdata.volume:/var/lib/postgresql/data
+# (by file name); Quadlet auto-injects the dependency, so you do NOT add
+# After=/Requires= for it by hand.
+#
+# Underlying data path:
+#   rootless: ~/.local/share/containers/storage/volumes/systemd-maihealthcoach-pgdata/
+#   rootful:  /var/lib/containers/storage/volumes/systemd-maihealthcoach-pgdata/
+# (Quadlet prefixes Quadlet-managed volumes with `systemd-`. Use
+#  `podman volume ls` to see the resolved name.)
+#
+# Install alongside the other unit files (see deploy/prod/README.md).
+# =============================================================================
+
+[Unit]
+Description=MAI Health Coach PostgreSQL data volume
+
+[Volume]
+Label=app=maihealthcoach
+Label=component=database
+
+[Install]
+WantedBy=default.target

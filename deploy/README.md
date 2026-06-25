@@ -25,7 +25,13 @@ deploy/
 ├── compose.yml             # Full local stack (api + postgres)
 ├── compose.ci.yaml         # Minimal stack for CI integration tests — later ticket
 ├── .env.example            # Template for local env vars (copy to .env)
-└── systemd/                # Prod: quadlet/systemd unit files — later ticket
+└── prod/                   # Prod: Podman Quadlet + systemd units (see prod/README.md)
+    ├── maihealthcoach.network        # Bridge network for the prod stack
+    ├── maihealthcoach-pgdata.volume  # Named volume for Postgres data
+    ├── postgres.container            # PostgreSQL 16 service unit
+    ├── api.container                 # API service unit
+    ├── .env.example                  # Prod non-secret env template (copy to an absolute env file)
+    └── README.md                     # Prod quick reference
 ```
 
 > The container-ignore files (`.containerignore` for Podman, `.dockerignore` for
@@ -67,16 +73,25 @@ non-root `app` user shipped by the .NET base image.
 
 - Local: `.env` file (gitignored) next to `compose.yml`, loaded automatically by Compose
 - CI: GitHub Actions secrets
-- Production: systemd `EnvironmentFile` or a secrets manager (TBD)
+- Production: **Podman secrets** (`podman secret create`) for `Ai__ApiKey` and the DB
+  connection string; non-secret vars in an absolute env file. See
+  [docs/deployment-runbook.md](../docs/deployment-runbook.md) and
+  [deploy/prod/README.md](prod/README.md).
 
 Never commit secrets. `.env` is gitignored; `.env.example` is committed and
 documents every required variable with safe local-dev defaults.
 
+## Production
+
+Production runs the stack as systemd-managed Podman containers via **Quadlet** units in
+[`deploy/prod/`](prod/README.md). The full procedure — image build/publish, secrets,
+migrations, health checks, observability, rollback, and backup/restore — is in the
+[Production Deployment Runbook](../docs/deployment-runbook.md).
+
 ## Coming in Later Tickets
 
-- F5: GitHub Actions CI workflow (build + test image)
 - Web front-end `Containerfile` (nginx)
-- Production systemd/quadlet units
+- `compose.ci.yaml` for CI integration tests
 
 ## Local Run
 

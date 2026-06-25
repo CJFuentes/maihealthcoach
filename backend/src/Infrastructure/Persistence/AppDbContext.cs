@@ -1,5 +1,6 @@
 using MAIHealthCoach.Domain.Coaching;
 using MAIHealthCoach.Domain.Diary;
+using MAIHealthCoach.Domain.Exercise;
 using MAIHealthCoach.Domain.Food;
 using MAIHealthCoach.Domain.Goals;
 using MAIHealthCoach.Domain.UserProfiles;
@@ -55,6 +56,9 @@ public sealed class AppDbContext : DbContext
 
     /// <summary>Water intake log entries, one per logged amount per day (issue #31).</summary>
     public DbSet<WaterLogEntry> WaterLogEntries => Set<WaterLogEntry>();
+
+    /// <summary>Exercise activity catalog: seeded shared activities and user-created custom activities (issue #33).</summary>
+    public DbSet<ExerciseActivity> ExerciseActivities => Set<ExerciseActivity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

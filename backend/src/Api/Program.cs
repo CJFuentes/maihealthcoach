@@ -2,6 +2,7 @@ using System.Reflection;
 using Asp.Versioning;
 using MAIHealthCoach.Api.Features.Coach;
 using MAIHealthCoach.Api.Features.Diary;
+using MAIHealthCoach.Api.Features.Exercises;
 using MAIHealthCoach.Api.Features.Foods;
 using MAIHealthCoach.Api.Features.Goals;
 using MAIHealthCoach.Api.Features.Profile;
@@ -219,6 +220,11 @@ try
     // GET /api/v1/me/water?date=, PUT/DELETE /api/v1/me/water/{id} — log amounts and
     // report the day's consumed total vs the daily water goal (with remaining).
     v1.MapWaterEndpoints();
+
+    // Exercise catalog endpoints (issue #33): authenticated GET /api/v1/exercises (list/search
+    // seeded shared + the caller's own custom activities) and POST /api/v1/exercises (create a
+    // custom activity). Exercise logging (#34) and UI (#35) build on this catalog.
+    v1.MapExercisesEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

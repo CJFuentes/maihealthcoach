@@ -9,6 +9,7 @@ import type profile from './locales/en/profile.json';
 import type goals from './locales/en/goals.json';
 import type scan from './locales/en/scan.json';
 import type auth from './locales/en/auth.json';
+import type coach from './locales/en/coach.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -22,6 +23,7 @@ declare module 'i18next' {
       goals: typeof goals;
       scan: typeof scan;
       auth: typeof auth;
+      coach: typeof coach;
     };
   }
 }

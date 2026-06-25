@@ -45,11 +45,11 @@ describe('Layout — accessibility landmarks', () => {
     expect(main).toHaveAttribute('id', 'main-content');
   });
 
-  it('renders all five primary nav links', () => {
+  it('renders all primary nav links', () => {
     renderLayout();
 
     const nav = screen.getByRole('navigation', { name: /primary/i });
-    for (const name of [/home/i, /about/i, /profile/i, /goals/i, /scan/i]) {
+    for (const name of [/home/i, /about/i, /profile/i, /goals/i, /diary/i, /scan/i, /coach/i]) {
       expect(screen.getByRole('link', { name })).toBeInTheDocument();
     }
     // The links live inside the primary nav landmark.

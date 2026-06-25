@@ -1,14 +1,17 @@
 using MAIHealthCoach.Application.Coaching;
 using MAIHealthCoach.Application.Food;
+using MAIHealthCoach.Application.Notifications;
 using MAIHealthCoach.Infrastructure.Auth;
 using MAIHealthCoach.Infrastructure.Coaching;
 using MAIHealthCoach.Infrastructure.Configuration;
 using MAIHealthCoach.Infrastructure.Food;
+using MAIHealthCoach.Infrastructure.Notifications;
 using MAIHealthCoach.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
@@ -39,6 +42,26 @@ public static class DependencyInjection
         services.AddCoachingServices();
 
         services.AddNutritionLookupServices();
+
+        services.AddPushNotificationServices();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the push-notification delivery seam and the reminder background sweep (issue #48).
+    /// </summary>
+    /// <remarks>
+    /// The sender is registered with <c>TryAddSingleton</c> so a real FCM/APNs/Web Push sender wired
+    /// up later (or in a test host) replaces the no-op <see cref="LoggingPushNotificationSender"/>
+    /// default without colliding. The hosted <see cref="PushReminderBackgroundService"/> always runs
+    /// but every tick is inert until <c>PushReminder:Enabled</c> is set true, so registering it
+    /// unconditionally is safe.
+    /// </remarks>
+    public static IServiceCollection AddPushNotificationServices(this IServiceCollection services)
+    {
+        services.TryAddSingleton<IPushNotificationSender, LoggingPushNotificationSender>();
+        services.AddHostedService<PushReminderBackgroundService>();
 
         return services;
     }
@@ -168,6 +191,10 @@ public static class DependencyInjection
         services.AddOptions<OpenFoodFactsOptions>()
             .Bind(configuration.GetSection(OpenFoodFactsOptions.SectionName));
         services.AddSingleton<IValidateOptions<OpenFoodFactsOptions>, OpenFoodFactsOptionsValidator>();
+
+        services.AddOptions<PushReminderOptions>()
+            .Bind(configuration.GetSection(PushReminderOptions.SectionName));
+        services.AddSingleton<IValidateOptions<PushReminderOptions>, PushReminderOptionsValidator>();
 
         return services;
     }

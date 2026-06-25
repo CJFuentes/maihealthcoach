@@ -3,6 +3,7 @@ using MAIHealthCoach.Domain.Diary;
 using MAIHealthCoach.Domain.Exercise;
 using MAIHealthCoach.Domain.Food;
 using MAIHealthCoach.Domain.Goals;
+using MAIHealthCoach.Domain.Notifications;
 using MAIHealthCoach.Domain.UserProfiles;
 using MAIHealthCoach.Domain.Users;
 using MAIHealthCoach.Domain.Water;
@@ -62,6 +63,12 @@ public sealed class AppDbContext : DbContext
 
     /// <summary>Exercise log entries, one per logged activity per day, with a snapshotted calories-burned estimate (issue #34).</summary>
     public DbSet<ExerciseLogEntry> ExerciseLogEntries => Set<ExerciseLogEntry>();
+
+    /// <summary>Push-notification device registrations, one per device token (issue #48).</summary>
+    public DbSet<DeviceRegistration> DeviceRegistrations => Set<DeviceRegistration>();
+
+    /// <summary>Per-user push-reminder preferences, one row per user (issue #48).</summary>
+    public DbSet<ReminderPreferences> ReminderPreferences => Set<ReminderPreferences>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

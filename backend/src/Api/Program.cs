@@ -7,6 +7,7 @@ using MAIHealthCoach.Api.Features.Exercise;
 using MAIHealthCoach.Api.Features.Exercises;
 using MAIHealthCoach.Api.Features.Foods;
 using MAIHealthCoach.Api.Features.Goals;
+using MAIHealthCoach.Api.Features.Notifications;
 using MAIHealthCoach.Api.Features.Profile;
 using MAIHealthCoach.Api.Features.Streaks;
 using MAIHealthCoach.Api.Features.Summary;
@@ -250,6 +251,16 @@ try
 
     // Exercise log endpoints (issue #34): authenticated POST /api/v1/me/exercise, GET /api/v1/me/exercise?date=, PUT/DELETE /api/v1/me/exercise/{id} — log activity sessions with a snapshotted calories-burned estimate and report the day's total (consumed by FD5's summary).
     v1.MapExerciseLogEndpoints();
+
+    // Push device registration endpoints (issue #48): authenticated POST/GET /api/v1/me/devices and
+    // DELETE /api/v1/me/devices/{id} — register/list/unregister push tokens; token conflicts hand
+    // the device off to the caller rather than failing.
+    v1.MapDeviceEndpoints();
+
+    // Reminder preferences endpoints (issue #48): authenticated GET/PUT
+    // /api/v1/me/reminder-preferences — meal/water reminder schedule, quiet hours, and UTC offset
+    // consumed by the push-reminder background sweep.
+    v1.MapReminderPreferencesEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

@@ -699,3 +699,139 @@ dialog.diary-dialog::backdrop {
 .food-card > button {
   margin-top: 1rem;
 }
+
+/* Water — progress */
+.water-progress {
+  margin-bottom: 1.5rem;
+}
+
+.water-progress-bar {
+  height: 1rem;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.water-progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.water-progress-fill-over {
+  background: var(--color-success);
+}
+
+.water-progress-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  margin: 0.75rem 0 0;
+}
+
+.water-progress-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.water-progress-stat dt {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.water-progress-stat dd {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.water-progress-reached {
+  color: var(--color-success);
+  font-size: 0.95rem;
+}
+
+/* Water — quick add */
+.water-quick-add {
+  margin-bottom: 1.5rem;
+}
+
+.water-quick-add h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.water-quick-add-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.water-custom-add {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.water-custom-input,
+.water-edit-input {
+  width: 7rem;
+}
+
+.water-entry-unit {
+  color: var(--color-muted);
+}
+
+/* Water — entry list */
+.water-entry-list {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.water-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.water-entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.water-entry-amount {
+  font-weight: 600;
+}
+
+.water-entry-time {
+  font-size: 0.85rem;
+}
+
+.water-entry-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.water-entry-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}

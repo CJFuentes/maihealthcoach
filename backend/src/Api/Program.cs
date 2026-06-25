@@ -6,6 +6,7 @@ using MAIHealthCoach.Api.Features.Foods;
 using MAIHealthCoach.Api.Features.Goals;
 using MAIHealthCoach.Api.Features.Profile;
 using MAIHealthCoach.Api.Features.Summary;
+using MAIHealthCoach.Api.Features.Water;
 using MAIHealthCoach.Api.Middleware;
 using MAIHealthCoach.Application;
 using MAIHealthCoach.Infrastructure;
@@ -213,6 +214,11 @@ try
     // /api/v1/me/foods plus /me/foods/{id}/favorite and the /me/foods/favorites and
     // /me/foods/recents listings.
     v1.MapMyFoodsEndpoints();
+
+    // Water log endpoints (issue #31): authenticated POST /api/v1/me/water,
+    // GET /api/v1/me/water?date=, PUT/DELETE /api/v1/me/water/{id} — log amounts and
+    // report the day's consumed total vs the daily water goal (with remaining).
+    v1.MapWaterEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the

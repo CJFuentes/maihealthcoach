@@ -4,6 +4,7 @@ using MAIHealthCoach.Domain.Food;
 using MAIHealthCoach.Domain.Goals;
 using MAIHealthCoach.Domain.UserProfiles;
 using MAIHealthCoach.Domain.Users;
+using MAIHealthCoach.Domain.Water;
 using Microsoft.EntityFrameworkCore;
 
 namespace MAIHealthCoach.Infrastructure.Persistence;
@@ -51,6 +52,9 @@ public sealed class AppDbContext : DbContext
 
     /// <summary>Messages within coach chat conversations, user and assistant turns (issue #39).</summary>
     public DbSet<Message> CoachMessages => Set<Message>();
+
+    /// <summary>Water intake log entries, one per logged amount per day (issue #31).</summary>
+    public DbSet<WaterLogEntry> WaterLogEntries => Set<WaterLogEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

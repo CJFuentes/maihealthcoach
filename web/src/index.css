@@ -835,3 +835,173 @@ dialog.diary-dialog::backdrop {
   flex-wrap: wrap;
   width: 100%;
 }
+
+/* ── Exercise page ─────────────────────────────────────────────────── */
+
+/* Exercise — daily summary */
+.exercise-daily-summary {
+  margin-bottom: 1.5rem;
+}
+
+.exercise-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin: 0;
+}
+
+.exercise-summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.exercise-summary-stat dt {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.exercise-summary-stat dd {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Exercise — log form */
+.exercise-log-form {
+  margin-bottom: 1.5rem;
+}
+
+.exercise-log-form h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+/* Exercise — catalog search */
+.exercise-search-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.exercise-search-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.exercise-search-controls input[type='search'] {
+  flex: 1 1 200px;
+}
+
+.exercise-search-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.exercise-search-result-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.exercise-search-result-btn:hover:not(:disabled) {
+  background: var(--color-bg);
+  border-color: var(--color-primary);
+}
+
+.exercise-result-name {
+  font-weight: 500;
+}
+
+.exercise-result-meta {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+/* Exercise — duration entry form */
+.exercise-selected-name {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.exercise-duration-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.exercise-duration-input,
+.exercise-edit-input {
+  width: 6rem;
+}
+
+.exercise-entry-unit {
+  color: var(--color-muted);
+}
+
+/* Exercise — entry list */
+.exercise-entry-list {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.exercise-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.exercise-entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-entry-name {
+  font-weight: 600;
+}
+
+.exercise-entry-duration,
+.exercise-entry-calories {
+  font-size: 0.9rem;
+}
+
+.exercise-entry-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.exercise-entry-edit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}

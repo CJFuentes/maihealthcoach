@@ -25,6 +25,7 @@ export default function Layout() {
           <NavLink to="/goals">{t('goals')}</NavLink>
           <NavLink to="/diary">{t('diary')}</NavLink>
           <NavLink to="/water">{t('water')}</NavLink>
+          <NavLink to="/exercise">{t('exercise')}</NavLink>
           <NavLink to="/scan">{t('scan')}</NavLink>
           <NavLink to="/coach">{t('coach')}</NavLink>
         </nav>

@@ -9,6 +9,7 @@ using MAIHealthCoach.Api.Features.Profile;
 using MAIHealthCoach.Api.Features.Summary;
 using MAIHealthCoach.Api.Features.Water;
 using MAIHealthCoach.Api.Middleware;
+using MAIHealthCoach.Api.RateLimiting;
 using MAIHealthCoach.Application;
 using MAIHealthCoach.Infrastructure;
 using MAIHealthCoach.Infrastructure.Auth;
@@ -50,9 +51,11 @@ try
     builder.Services.AddInfrastructure(builder.Configuration);
     builder.Services.AddInfrastructureHealthChecks();
 
-    // Per-user rate limiting for the coach chat send endpoint (issue #39). The policy reads
-    // CoachChatOptions at request time so configuration overrides apply.
-    builder.Services.AddCoachChatRateLimiter();
+    // API rate limiting + abuse protection (issue #45): a global limiter partitioned by
+    // authenticated user (else client IP) plus a stricter per-user policy for the expensive coach
+    // LLM endpoints. Consolidates issue #39's chat limiter. Policies read their options at request
+    // time so configuration overrides apply.
+    builder.Services.AddApiRateLimiter();
 
     builder.Services.AddProblemDetails();
     builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -115,9 +118,10 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // Rate limiting sits after authentication/authorization so the per-user partition key can
-    // read the authenticated principal's 'sub' claim (issue #39). Endpoints opt in via
-    // RequireRateLimiting; everything else passes through unthrottled.
+    // Rate limiting sits after authentication/authorization so the partition keys can read the
+    // authenticated principal's 'sub' claim (issue #45). The global limiter applies to all requests
+    // (health/OpenAPI paths exempt); the coach LLM endpoints opt into the stricter named policy via
+    // RequireRateLimiting.
     app.UseRateLimiter();
 
     if (app.Environment.IsDevelopment())

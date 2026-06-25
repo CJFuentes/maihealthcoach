@@ -1,3 +1,4 @@
+using MAIHealthCoach.Api.RateLimiting;
 using MAIHealthCoach.Application.Coaching;
 using MAIHealthCoach.Application.Goals;
 using MAIHealthCoach.Application.MealSuggestions;
@@ -15,9 +16,9 @@ namespace MAIHealthCoach.Api.Features.Coach;
 /// <summary>
 /// Registers the MAI coach endpoints on the supplied versioned route builder.
 /// <list type="bullet">
-///   <item><description><c>GET /me/coach/meal-suggestions</c> — suggest meals that fit the user's remaining nutrition budget and dietary preferences (issue #37).</description></item>
-///   <item><description><c>GET /me/coach/nudge</c> — return a short, personalised motivational nudge based on optional streak/adherence signals (issue #38).</description></item>
-///   <item><description><c>POST /me/coach/chat</c> — send a chat message and get a contextual reply, persisting the turn (issue #39, per-user rate limited).</description></item>
+///   <item><description><c>GET /me/coach/meal-suggestions</c> — suggest meals that fit the user's remaining nutrition budget and dietary preferences (issue #37, per-user coach rate limited per #45).</description></item>
+///   <item><description><c>GET /me/coach/nudge</c> — return a short, personalised motivational nudge based on optional streak/adherence signals (issue #38, per-user coach rate limited per #45).</description></item>
+///   <item><description><c>POST /me/coach/chat</c> — send a chat message and get a contextual reply, persisting the turn (issue #39, per-user coach rate limited — consolidated under #45).</description></item>
 ///   <item><description><c>GET /me/coach/chat</c> — list the user's conversations, newest first (issue #39).</description></item>
 ///   <item><description><c>GET /me/coach/chat/{conversationId}</c> — retrieve a conversation and its ordered messages (issue #39).</description></item>
 /// </list>
@@ -30,15 +31,22 @@ internal static class CoachEndpoints
     {
         var coach = group.MapGroup("/me/coach").RequireAuthorization();
 
+        // The three coach LLM endpoints (meal-suggestions / nudge / chat) hit Anthropic and are the
+        // prime abuse target, so each carries the stricter per-user coach policy (issue #45). This
+        // consolidates issue #39's chat-only limiter into the shared mechanism — chat still enforces
+        // a per-user budget that yields 429 when exceeded. The read-only chat listing/detail GETs
+        // below are cheap and rely on the global limiter only.
         coach.MapGet("/meal-suggestions", GetMealSuggestionsAsync)
-            .WithName("GetMealSuggestions");
+            .WithName("GetMealSuggestions")
+            .RequireRateLimiting(ApiRateLimiting.CoachPolicyName);
 
         coach.MapGet("/nudge", GetNudgeAsync)
-            .WithName("GetNudge");
+            .WithName("GetNudge")
+            .RequireRateLimiting(ApiRateLimiting.CoachPolicyName);
 
         coach.MapPost("/chat", SendChatMessageAsync)
             .WithName("SendCoachChatMessage")
-            .RequireRateLimiting(ChatRateLimiting.ChatSendPolicyName);
+            .RequireRateLimiting(ApiRateLimiting.CoachPolicyName);
 
         coach.MapGet("/chat", ListConversationsAsync)
             .WithName("ListCoachConversations");

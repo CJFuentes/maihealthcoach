@@ -1,6 +1,7 @@
 using MAIHealthCoach.Application.Coaching;
 using MAIHealthCoach.Domain.Coaching;
 using MAIHealthCoach.Infrastructure.Configuration;
+using MAIHealthCoach.Infrastructure.Observability;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -54,6 +55,10 @@ internal sealed class CoachService : ICoachService
     public async Task<CoachResult> AskAsync(CoachRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+
+        // Count every coach request received, regardless of outcome (config error, guardrail
+        // short-circuit, upstream failure, or success) — this is the custom telemetry counter (#47).
+        AppTelemetry.CoachRequests.Add(1);
 
         var options = _aiOptions.Value;
 

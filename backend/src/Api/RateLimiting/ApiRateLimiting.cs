@@ -134,14 +134,15 @@ internal static class ApiRateLimiting
     }
 
     /// <summary>
-    /// Health-check and OpenAPI paths are exempt from the global limiter so probes and docs are
-    /// never rate-limited into failure.
+    /// Health-check, OpenAPI, and Prometheus metrics paths are exempt from the global limiter so
+    /// probes, docs, and metric scrapes are never rate-limited into failure.
     /// </summary>
     private static bool IsExempt(HttpContext httpContext)
     {
         var path = httpContext.Request.Path;
         return path.StartsWithSegments("/healthz", StringComparison.OrdinalIgnoreCase)
-            || path.StartsWithSegments("/openapi", StringComparison.OrdinalIgnoreCase);
+            || path.StartsWithSegments("/openapi", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWithSegments("/metrics", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

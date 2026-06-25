@@ -19,6 +19,13 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The AppTelemetry counter/meter is a process-global static shared across tests, so the
+         measurement-observation test must not race other tests writing the same instrument.
+         Serialize test collections (Infrastructure.Tests ships no runner config otherwise and
+         parallelizes by default) to keep the shared static telemetry observation deterministic. -->
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Infrastructure\MAIHealthCoach.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

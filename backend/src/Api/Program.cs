@@ -7,6 +7,7 @@ using MAIHealthCoach.Api.Features.Exercises;
 using MAIHealthCoach.Api.Features.Foods;
 using MAIHealthCoach.Api.Features.Goals;
 using MAIHealthCoach.Api.Features.Profile;
+using MAIHealthCoach.Api.Features.Streaks;
 using MAIHealthCoach.Api.Features.Summary;
 using MAIHealthCoach.Api.Features.Water;
 using MAIHealthCoach.Api.Middleware;
@@ -215,6 +216,10 @@ try
     // Daily nutrition summary endpoint (issue #23): authenticated
     // GET /api/v1/me/summary?date= — consumed vs goal targets for calories + macros.
     v1.MapSummaryEndpoints();
+
+    // Streaks endpoint (issue #44): authenticated GET /api/v1/me/streaks — current + longest
+    // active-day streak (diary OR water) and 7/30-day calorie + water adherence vs goal targets.
+    v1.MapStreaksEndpoints();
 
     // Custom foods, favorites & recents endpoints (issue #24): authenticated CRUD over
     // /api/v1/me/foods plus /me/foods/{id}/favorite and the /me/foods/favorites and

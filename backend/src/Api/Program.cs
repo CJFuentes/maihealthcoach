@@ -11,6 +11,7 @@ using MAIHealthCoach.Api.Features.Streaks;
 using MAIHealthCoach.Api.Features.Summary;
 using MAIHealthCoach.Api.Features.Water;
 using MAIHealthCoach.Api.Middleware;
+using MAIHealthCoach.Api.Observability;
 using MAIHealthCoach.Api.RateLimiting;
 using MAIHealthCoach.Application;
 using MAIHealthCoach.Infrastructure;
@@ -93,6 +94,8 @@ try
             desc.GroupName == null || desc.GroupName == "v1";
     });
 
+    builder.AddObservability();
+
     var app = builder.Build();
 
     // Apply pending EF Core migrations automatically in Development when opted in.
@@ -151,6 +154,8 @@ try
     {
         Predicate = check => check.Tags.Contains(MAIHealthCoach.Infrastructure.DependencyInjection.ReadyTag),
     });
+
+    app.MapObservabilityEndpoints();
 
     // ── Versioned API endpoints ───────────────────────────────────────────────────
     // NewVersionedApi creates a versioned route group tracked by the API explorer.

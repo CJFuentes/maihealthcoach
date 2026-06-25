@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ping, type PingResponse } from '../api/health';
 
 type Status =
@@ -8,6 +9,7 @@ type Status =
   | { state: 'error'; message: string };
 
 export default function HomePage() {
+  const { t } = useTranslation('home');
   const [status, setStatus] = useState<Status>({ state: 'idle' });
 
   useEffect(() => {
@@ -34,14 +36,14 @@ export default function HomePage() {
 
   return (
     <section>
-      <h1>MAI Health Coach</h1>
-      {status.state === 'loading' && <p>Checking backend…</p>}
+      <h1>{t('title')}</h1>
+      {status.state === 'loading' && <p>{t('checking')}</p>}
       {status.state === 'success' && (
-        <p>
-          Backend online — {status.data.service} v{status.data.version}
-        </p>
+        <p>{t('online', { service: status.data.service, version: status.data.version })}</p>
       )}
-      {status.state === 'error' && <p role="alert">Backend unavailable — {status.message}</p>}
+      {status.state === 'error' && (
+        <p role="alert">{t('unavailable', { message: status.message })}</p>
+      )}
     </section>
   );
 }

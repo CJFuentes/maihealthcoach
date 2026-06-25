@@ -3,6 +3,7 @@ import tseslint from 'typescript-eslint';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import globals from 'globals';
 import prettier from 'eslint-config-prettier';
 
@@ -36,6 +37,13 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
+  },
+  jsxA11y.flatConfigs.recommended,
+  {
+    // The only <video> is a live barcode-decoding camera feed with no audio and
+    // no captionable content, so the captions rule does not apply here.
+    files: ['src/**/*.{ts,tsx}'],
+    rules: { 'jsx-a11y/media-has-caption': 'off' },
   },
   {
     files: ['*.{js,cjs}'],

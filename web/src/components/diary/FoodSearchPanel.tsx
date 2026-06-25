@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { searchFoods, type FoodDto } from '../../api/foods';
 
 /** Props for {@link FoodSearchPanel}. */
@@ -25,6 +25,13 @@ const DEBOUNCE_MS = 350;
 export default function FoodSearchPanel({ onSelect }: FoodSearchPanelProps) {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<SearchStatus>({ state: 'idle' });
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Move focus into the search field on mount (replaces the autoFocus prop, which
+  // jsx-a11y disallows) so keyboard users land in the field immediately.
+  useEffect(() => {
+    searchInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     if (query.trim().length < MIN_QUERY_LENGTH) {
@@ -62,10 +69,10 @@ export default function FoodSearchPanel({ onSelect }: FoodSearchPanelProps) {
   return (
     <div className="food-search-panel">
       <input
+        ref={searchInputRef}
         type="search"
         aria-label="Search foods"
         placeholder="Search foods…"
-        autoFocus
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />

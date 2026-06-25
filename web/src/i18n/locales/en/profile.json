@@ -1,0 +1,51 @@
+{
+  "title": "Profile",
+  "loading": "Loading your profile…",
+  "loadError": "Could not load your profile — {{message}}",
+  "newProfileHint": "Complete your profile below to unlock personalised goals.",
+  "unitsLegend": "Units",
+  "measurementUnits": "Measurement units",
+  "unitsMetric": "Metric (cm, kg)",
+  "unitsImperial": "Imperial (in, lb)",
+  "heightCm": "Height (cm)",
+  "heightIn": "Height (in)",
+  "weightKg": "Weight (kg)",
+  "weightLb": "Weight (lb)",
+  "dateOfBirth": "Date of birth",
+  "biologicalSex": "Biological sex",
+  "activityLevel": "Activity level",
+  "primaryGoal": "Primary goal",
+  "dietType": "Diet type",
+  "allergies": "Allergies & intolerances",
+  "allergiesPlaceholder": "e.g. peanuts, shellfish, lactose",
+  "selectPlaceholder": "Select…",
+  "saving": "Saving…",
+  "saveButton": "Save profile",
+  "saved": "Profile saved.",
+  "correctFields": "Please correct the highlighted fields.",
+  "saveError": "Could not save your profile.",
+  "sex": {
+    "Male": "Male",
+    "Female": "Female"
+  },
+  "activity": {
+    "Sedentary": "Sedentary",
+    "LightlyActive": "Lightly active",
+    "ModeratelyActive": "Moderately active",
+    "VeryActive": "Very active",
+    "ExtraActive": "Extra active"
+  },
+  "goal": {
+    "Lose": "Lose weight",
+    "Maintain": "Maintain weight",
+    "Gain": "Gain weight"
+  },
+  "diet": {
+    "None": "No restriction",
+    "Vegetarian": "Vegetarian",
+    "Vegan": "Vegan",
+    "Pescatarian": "Pescatarian",
+    "Keto": "Keto",
+    "Paleo": "Paleo"
+  }
+}

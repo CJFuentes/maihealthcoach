@@ -1,0 +1,9 @@
+{
+  "skipToContent": "Skip to main content",
+  "unknownError": "Unknown error",
+  "notFound": {
+    "title": "Page not found",
+    "body": "The page you are looking for does not exist.",
+    "goHome": "Go back home"
+  }
+}

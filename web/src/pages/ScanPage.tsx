@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ApiError } from '../api/client';
 import {
   lookupBarcode,
@@ -41,6 +42,7 @@ type LookupState =
  * clearly-marked TODO no-op so this slice has a clean integration seam.
  */
 export default function ScanPage() {
+  const { t } = useTranslation('scan');
   const [lookup, setLookup] = useState<LookupState>({ state: 'idle' });
   const [manualCode, setManualCode] = useState('');
 
@@ -55,7 +57,7 @@ export default function ScanPage() {
       setLookup({
         state: 'error',
         code: rawCode,
-        message: 'Please enter a valid numeric barcode.',
+        message: t('invalidBarcode'),
       });
       return;
     }
@@ -75,8 +77,8 @@ export default function ScanPage() {
       } else {
         const message =
           error instanceof ApiError
-            ? `Lookup failed (error ${error.status}). Please try again.`
-            : 'Lookup failed. Please try again.';
+            ? t('lookupFailedStatus', { status: error.status })
+            : t('lookupFailed');
         setLookup({ state: 'error', code, message });
       }
     }
@@ -108,17 +110,15 @@ export default function ScanPage() {
 
   return (
     <section className="scan-page">
-      <h1>Scan a barcode</h1>
-      <p className="hint">
-        Point your camera at a product barcode, or type it in manually, to look up its nutrition.
-      </p>
+      <h1>{t('title')}</h1>
+      <p className="hint">{t('hint')}</p>
 
-      <Suspense fallback={<p className="hint">Loading camera scanner…</p>}>
+      <Suspense fallback={<p className="hint">{t('loadingScanner')}</p>}>
         <BarcodeScanner onDetected={handleScanned} disabled={isLoading} />
       </Suspense>
 
       <form className="manual-entry" onSubmit={handleManualSubmit}>
-        <label htmlFor="manual-barcode">Enter barcode manually</label>
+        <label htmlFor="manual-barcode">{t('manualLabel')}</label>
         <div className="manual-entry-row">
           <input
             id="manual-barcode"
@@ -126,12 +126,12 @@ export default function ScanPage() {
             type="text"
             inputMode="numeric"
             autoComplete="off"
-            placeholder="e.g. 5000159484695"
+            placeholder={t('manualPlaceholder')}
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
           />
           <button type="submit" disabled={isLoading || manualCode.trim() === ''}>
-            {isLoading ? 'Looking up…' : 'Look up'}
+            {isLoading ? t('lookingUp') : t('lookUp')}
           </button>
         </div>
       </form>
@@ -153,22 +153,28 @@ interface LookupResultProps {
 
 /** Renders the outcome of the current barcode lookup. */
 function LookupResult({ lookup, onAddToDiary, onRetry }: LookupResultProps) {
+  const { t } = useTranslation('scan');
+
   switch (lookup.state) {
     case 'idle':
       return null;
 
     case 'loading':
-      return <p role="status">Looking up barcode {lookup.code}…</p>;
+      return <p role="status">{t('lookingUpCode', { code: lookup.code })}</p>;
 
     case 'notFound':
       return (
         <div className="lookup-result lookup-empty" role="status">
+          {/* Preserve the text + <strong>{code}</strong> + "." structure so the
+              code remains its own queryable element while the surrounding text
+              is translated. */}
           <p>
-            No food found for barcode <strong>{lookup.code}</strong>.
+            {t('notFoundPrefix')}
+            <strong>{lookup.code}</strong>.
           </p>
           {/* TODO(#25): wire this to the custom-food creation flow. */}
           <button type="button" disabled>
-            Create a custom food (coming soon)
+            {t('createCustomFood')}
           </button>
         </div>
       );
@@ -176,11 +182,9 @@ function LookupResult({ lookup, onAddToDiary, onRetry }: LookupResultProps) {
     case 'unavailable':
       return (
         <div className="lookup-result" role="alert">
-          <p className="message message-error">
-            The food lookup service is temporarily unavailable. Please try again in a moment.
-          </p>
+          <p className="message message-error">{t('unavailable')}</p>
           <button type="button" onClick={() => onRetry(lookup.code)}>
-            Retry
+            {t('retry')}
           </button>
         </div>
       );
@@ -207,58 +211,71 @@ interface FoodResultProps {
 
 /** Displays a matched food: name/brand, nutrition per 100 g, and serving sizes. */
 function FoodResult({ food, onAdd }: FoodResultProps) {
+  const { t } = useTranslation('scan');
   const n = food.nutritionPer100g;
 
   return (
-    <article className="lookup-result food-card" aria-label={`Food: ${food.name}`}>
+    <article className="lookup-result food-card" aria-label={t('foodLabel', { name: food.name })}>
       <header className="food-card-header">
         <h2>{food.name}</h2>
         {food.brand && <p className="food-brand">{food.brand}</p>}
         <p className="food-meta">
-          {food.barcode && <span>Barcode {food.barcode}</span>}
+          {food.barcode && <span>{t('barcodeLabel', { code: food.barcode })}</span>}
           {food.source && <span> · {food.source}</span>}
         </p>
       </header>
 
-      <h3>Nutrition (per 100 g)</h3>
+      <h3>{t('nutritionTitle')}</h3>
       <ul className="nutrition-list">
         <li>
-          <span>Energy</span>
-          <span>{n.energyKcal} kcal</span>
+          <span>{t('energy')}</span>
+          <span>
+            {n.energyKcal} {t('units.kcal')}
+          </span>
         </li>
         <li>
-          <span>Protein</span>
-          <span>{n.proteinG} g</span>
+          <span>{t('protein')}</span>
+          <span>
+            {n.proteinG} {t('units.g')}
+          </span>
         </li>
         <li>
-          <span>Carbohydrate</span>
-          <span>{n.carbohydrateG} g</span>
+          <span>{t('carbohydrate')}</span>
+          <span>
+            {n.carbohydrateG} {t('units.g')}
+          </span>
         </li>
         <li>
-          <span>Fat</span>
-          <span>{n.fatG} g</span>
+          <span>{t('fat')}</span>
+          <span>
+            {n.fatG} {t('units.g')}
+          </span>
         </li>
         {n.fiberG != null && (
           <li>
-            <span>Fibre</span>
-            <span>{n.fiberG} g</span>
+            <span>{t('fibre')}</span>
+            <span>
+              {n.fiberG} {t('units.g')}
+            </span>
           </li>
         )}
         {n.sugarsG != null && (
           <li>
-            <span>Sugars</span>
-            <span>{n.sugarsG} g</span>
+            <span>{t('sugars')}</span>
+            <span>
+              {n.sugarsG} {t('units.g')}
+            </span>
           </li>
         )}
       </ul>
 
       {food.servingSizes.length > 0 && (
         <>
-          <h3>Serving sizes</h3>
+          <h3>{t('servingSizesTitle')}</h3>
           <ul className="serving-list">
             {food.servingSizes.map((s) => (
               <li key={`${s.label}-${s.grams}`}>
-                {s.label} — {s.grams} g
+                {t('servingSize', { label: s.label, grams: s.grams })}
               </li>
             ))}
           </ul>
@@ -267,7 +284,7 @@ function FoodResult({ food, onAdd }: FoodResultProps) {
 
       {/* Integration seam for #25 — disabled placeholder, no diary logging here. */}
       <button type="button" onClick={() => onAdd(food)}>
-        Add to diary
+        {t('addToDiary')}
       </button>
     </article>
   );

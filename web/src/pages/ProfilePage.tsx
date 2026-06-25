@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ApiError } from '../api/client';
 import {
   getProfile,
@@ -30,28 +31,19 @@ interface FormState {
   allergies: string;
 }
 
-const ACTIVITY_LEVEL_LABELS: Record<ActivityLevel, string> = {
-  Sedentary: 'Sedentary',
-  LightlyActive: 'Lightly active',
-  ModeratelyActive: 'Moderately active',
-  VeryActive: 'Very active',
-  ExtraActive: 'Extra active',
-};
+// Enum option keys, in display order. The display label for each is resolved
+// via t(`activity.${key}`) etc.; the <option value> stays the raw enum key.
+const ACTIVITY_LEVELS: ActivityLevel[] = [
+  'Sedentary',
+  'LightlyActive',
+  'ModeratelyActive',
+  'VeryActive',
+  'ExtraActive',
+];
 
-const PRIMARY_GOAL_LABELS: Record<PrimaryGoal, string> = {
-  Lose: 'Lose weight',
-  Maintain: 'Maintain weight',
-  Gain: 'Gain weight',
-};
+const PRIMARY_GOALS: PrimaryGoal[] = ['Lose', 'Maintain', 'Gain'];
 
-const DIET_TYPE_LABELS: Record<DietType, string> = {
-  None: 'No restriction',
-  Vegetarian: 'Vegetarian',
-  Vegan: 'Vegan',
-  Pescatarian: 'Pescatarian',
-  Keto: 'Keto',
-  Paleo: 'Paleo',
-};
+const DIET_TYPES: DietType[] = ['None', 'Vegetarian', 'Vegan', 'Pescatarian', 'Keto', 'Paleo'];
 
 const CM_PER_INCH = 2.54;
 const LB_PER_KG = 2.20462;
@@ -150,6 +142,7 @@ function buildFormState(profile: ProfileResponse | null): FormState {
 }
 
 export default function ProfilePage() {
+  const { t } = useTranslation('profile');
   const [status, setStatus] = useState<Status>({ state: 'loading' });
   const [form, setForm] = useState<FormState>(() => buildFormState(null));
   const [saving, setSaving] = useState(false);
@@ -182,8 +175,8 @@ export default function ProfilePage() {
 
   const isNewProfile = status.state === 'ready' && status.profile === null;
 
-  const heightUnitLabel = form.units === 'Imperial' ? 'in' : 'cm';
-  const weightUnitLabel = form.units === 'Imperial' ? 'lb' : 'kg';
+  const heightLabel = form.units === 'Imperial' ? t('heightIn') : t('heightCm');
+  const weightLabel = form.units === 'Imperial' ? t('weightLb') : t('weightKg');
 
   function handleUnitsChange(next: UnitsPreference) {
     setForm((prev) => ({
@@ -214,9 +207,9 @@ export default function ProfilePage() {
     } catch (error: unknown) {
       if (error instanceof ApiError && error.problem?.errors) {
         setFieldErrors(error.problem.errors);
-        setSubmitError(error.problem.title ?? 'Please correct the highlighted fields.');
+        setSubmitError(error.problem.title ?? t('correctFields'));
       } else {
-        const message = error instanceof Error ? error.message : 'Could not save your profile.';
+        const message = error instanceof Error ? error.message : t('saveError');
         setSubmitError(message);
       }
     } finally {
@@ -244,8 +237,8 @@ export default function ProfilePage() {
   if (status.state === 'loading') {
     return (
       <section>
-        <h1>Profile</h1>
-        <p>Loading your profile…</p>
+        <h1>{t('title')}</h1>
+        <p>{t('loading')}</p>
       </section>
     );
   }
@@ -253,9 +246,9 @@ export default function ProfilePage() {
   if (status.state === 'error') {
     return (
       <section>
-        <h1>Profile</h1>
+        <h1>{t('title')}</h1>
         <p role="alert" className="message message-error">
-          Could not load your profile — {status.message}
+          {t('loadError', { message: status.message })}
         </p>
       </section>
     );
@@ -263,15 +256,13 @@ export default function ProfilePage() {
 
   return (
     <section>
-      <h1>Profile</h1>
-      {isNewProfile && (
-        <p className="hint">Complete your profile below to unlock personalised goals.</p>
-      )}
+      <h1>{t('title')}</h1>
+      {isNewProfile && <p className="hint">{t('newProfileHint')}</p>}
 
       <form onSubmit={handleSubmit} noValidate>
         <fieldset>
-          <legend>Units</legend>
-          <div className="units-toggle" role="radiogroup" aria-label="Measurement units">
+          <legend>{t('unitsLegend')}</legend>
+          <div className="units-toggle" role="radiogroup" aria-label={t('measurementUnits')}>
             <label>
               <input
                 type="radio"
@@ -280,7 +271,7 @@ export default function ProfilePage() {
                 checked={form.units === 'Metric'}
                 onChange={() => handleUnitsChange('Metric')}
               />
-              Metric (cm, kg)
+              {t('unitsMetric')}
             </label>
             <label>
               <input
@@ -290,14 +281,14 @@ export default function ProfilePage() {
                 checked={form.units === 'Imperial'}
                 onChange={() => handleUnitsChange('Imperial')}
               />
-              Imperial (in, lb)
+              {t('unitsImperial')}
             </label>
           </div>
         </fieldset>
 
         <div className="form-grid">
           <div className="form-field">
-            <label htmlFor="height">Height ({heightUnitLabel})</label>
+            <label htmlFor="height">{heightLabel}</label>
             <input
               id="height"
               name="height"
@@ -313,7 +304,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="form-field">
-            <label htmlFor="weight">Weight ({weightUnitLabel})</label>
+            <label htmlFor="weight">{weightLabel}</label>
             <input
               id="weight"
               name="weight"
@@ -329,7 +320,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="form-field">
-            <label htmlFor="dateOfBirth">Date of birth</label>
+            <label htmlFor="dateOfBirth">{t('dateOfBirth')}</label>
             <input
               id="dateOfBirth"
               name="dateOfBirth"
@@ -343,7 +334,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="form-field">
-            <label htmlFor="biologicalSex">Biological sex</label>
+            <label htmlFor="biologicalSex">{t('biologicalSex')}</label>
             <select
               id="biologicalSex"
               name="biologicalSex"
@@ -352,15 +343,15 @@ export default function ProfilePage() {
               aria-describedby={describedBy('biologicalSex')}
               aria-invalid={Boolean(fieldErrors.biologicalSex)}
             >
-              <option value="">Select…</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
+              <option value="">{t('selectPlaceholder')}</option>
+              <option value="Male">{t('sex.Male')}</option>
+              <option value="Female">{t('sex.Female')}</option>
             </select>
             {fieldError('biologicalSex')}
           </div>
 
           <div className="form-field">
-            <label htmlFor="activityLevel">Activity level</label>
+            <label htmlFor="activityLevel">{t('activityLevel')}</label>
             <select
               id="activityLevel"
               name="activityLevel"
@@ -369,10 +360,10 @@ export default function ProfilePage() {
               aria-describedby={describedBy('activityLevel')}
               aria-invalid={Boolean(fieldErrors.activityLevel)}
             >
-              <option value="">Select…</option>
-              {(Object.keys(ACTIVITY_LEVEL_LABELS) as ActivityLevel[]).map((level) => (
+              <option value="">{t('selectPlaceholder')}</option>
+              {ACTIVITY_LEVELS.map((level) => (
                 <option key={level} value={level}>
-                  {ACTIVITY_LEVEL_LABELS[level]}
+                  {t(`activity.${level}`)}
                 </option>
               ))}
             </select>
@@ -380,7 +371,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="form-field">
-            <label htmlFor="primaryGoal">Primary goal</label>
+            <label htmlFor="primaryGoal">{t('primaryGoal')}</label>
             <select
               id="primaryGoal"
               name="primaryGoal"
@@ -389,10 +380,10 @@ export default function ProfilePage() {
               aria-describedby={describedBy('primaryGoal')}
               aria-invalid={Boolean(fieldErrors.primaryGoal)}
             >
-              <option value="">Select…</option>
-              {(Object.keys(PRIMARY_GOAL_LABELS) as PrimaryGoal[]).map((goal) => (
+              <option value="">{t('selectPlaceholder')}</option>
+              {PRIMARY_GOALS.map((goal) => (
                 <option key={goal} value={goal}>
-                  {PRIMARY_GOAL_LABELS[goal]}
+                  {t(`goal.${goal}`)}
                 </option>
               ))}
             </select>
@@ -400,7 +391,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="form-field">
-            <label htmlFor="dietType">Diet type</label>
+            <label htmlFor="dietType">{t('dietType')}</label>
             <select
               id="dietType"
               name="dietType"
@@ -409,10 +400,10 @@ export default function ProfilePage() {
               aria-describedby={describedBy('dietType')}
               aria-invalid={Boolean(fieldErrors.dietType)}
             >
-              <option value="">Select…</option>
-              {(Object.keys(DIET_TYPE_LABELS) as DietType[]).map((diet) => (
+              <option value="">{t('selectPlaceholder')}</option>
+              {DIET_TYPES.map((diet) => (
                 <option key={diet} value={diet}>
-                  {DIET_TYPE_LABELS[diet]}
+                  {t(`diet.${diet}`)}
                 </option>
               ))}
             </select>
@@ -420,14 +411,14 @@ export default function ProfilePage() {
           </div>
 
           <div className="form-field form-field-wide">
-            <label htmlFor="allergies">Allergies &amp; intolerances</label>
+            <label htmlFor="allergies">{t('allergies')}</label>
             <textarea
               id="allergies"
               name="allergies"
               rows={3}
               value={form.allergies}
               onChange={(e) => update('allergies', e.target.value)}
-              placeholder="e.g. peanuts, shellfish, lactose"
+              placeholder={t('allergiesPlaceholder')}
               aria-describedby={describedBy('allergies')}
               aria-invalid={Boolean(fieldErrors.allergies)}
             />
@@ -442,12 +433,12 @@ export default function ProfilePage() {
         )}
         {saved && (
           <p role="status" className="message message-success">
-            Profile saved.
+            {t('saved')}
           </p>
         )}
 
         <button type="submit" disabled={saving}>
-          {saving ? 'Saving…' : 'Save profile'}
+          {saving ? t('saving') : t('saveButton')}
         </button>
       </form>
     </section>

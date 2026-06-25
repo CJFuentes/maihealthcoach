@@ -1,0 +1,41 @@
+{
+  "title": "Goals",
+  "loading": "Loading your goals…",
+  "loadError": "Could not load your goals — {{message}}",
+  "incompleteBody": "Complete your profile to see your personalised goals.",
+  "completeProfileLink": "Complete your profile",
+  "calories": "Calories",
+  "protein": "Protein",
+  "carbs": "Carbs",
+  "fat": "Fat",
+  "water": "Water",
+  "units": {
+    "kcal": "kcal",
+    "g": "g",
+    "ml": "ml"
+  },
+  "computed": "(computed: {{value}})",
+  "bmrLabel": "BMR",
+  "tdeeLabel": "TDEE",
+  "energySeparator": " · ",
+  "lastOverridden": "Last overridden {{date}}",
+  "customiseTitle": "Customise your targets",
+  "customiseHint": "Leave a field blank to use the computed value for that target.",
+  "override": {
+    "calories": "Calories (kcal)",
+    "protein": "Protein (g)",
+    "carbs": "Carbs (g)",
+    "fat": "Fat (g)",
+    "water": "Water (ml)"
+  },
+  "invalidNumber": "Enter a number, or leave blank to use the computed value.",
+  "saveButton": "Save overrides",
+  "saving": "Saving…",
+  "resetButton": "Reset to computed",
+  "saved": "Overrides saved.",
+  "correctFields": "Please correct the highlighted fields.",
+  "saveError": "Could not save overrides.",
+  "profileNotFound": "Profile not found.",
+  "profileMissingInfo": "Your profile is missing some required information.",
+  "unknownError": "Unknown error"
+}

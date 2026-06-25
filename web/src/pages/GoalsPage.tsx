@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ApiError } from '../api/client';
 import {
   getGoals,
@@ -15,40 +16,61 @@ type Status =
   | { state: 'incomplete'; message: string }
   | { state: 'error'; message: string };
 
-/** Override form rows: maps a request key to its label/unit and source goal. */
+/**
+ * Override form rows: maps a request key to its translation key for the label
+ * and the source goal accessor. The label is resolved via t(`override.${i18nKey}`)
+ * inside the component so it stays localizable.
+ */
 interface OverrideField {
   key: keyof SetGoalOverridesRequest;
-  label: string;
-  unit: string;
+  i18nKey: 'calories' | 'protein' | 'carbs' | 'fat' | 'water';
   goal: (g: GoalsResponse) => GoalValue;
 }
 
-const OVERRIDE_FIELDS: OverrideField[] = [
-  { key: 'caloriesKcal', label: 'Calories', unit: 'kcal', goal: (g) => g.calories },
-  { key: 'proteinGrams', label: 'Protein', unit: 'g', goal: (g) => g.proteinGrams },
-  { key: 'carbohydrateGrams', label: 'Carbs', unit: 'g', goal: (g) => g.carbohydrateGrams },
-  { key: 'fatGrams', label: 'Fat', unit: 'g', goal: (g) => g.fatGrams },
-  { key: 'waterMl', label: 'Water', unit: 'ml', goal: (g) => g.waterMl },
-];
-
-function buildOverrideForm(goals: GoalsResponse): Record<string, string> {
+function buildOverrideForm(fields: OverrideField[], goals: GoalsResponse): Record<string, string> {
   return Object.fromEntries(
-    OVERRIDE_FIELDS.map((f) => [f.key, String(f.goal(goals).value)]),
+    fields.map((f) => [f.key, String(f.goal(goals).value)]),
   ) as Record<string, string>;
 }
 
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString();
-}
-
 export default function GoalsPage() {
+  const { t, i18n } = useTranslation('goals');
   const [status, setStatus] = useState<Status>({ state: 'loading' });
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Moved inside the component so the override labels can use the active
+  // translation. Memoized so its identity is stable across renders, keeping the
+  // load effect's dependency list honest. The field set itself is static.
+  const OVERRIDE_FIELDS = useMemo<OverrideField[]>(
+    () => [
+      { key: 'caloriesKcal', i18nKey: 'calories', goal: (g) => g.calories },
+      { key: 'proteinGrams', i18nKey: 'protein', goal: (g) => g.proteinGrams },
+      { key: 'carbohydrateGrams', i18nKey: 'carbs', goal: (g) => g.carbohydrateGrams },
+      { key: 'fatGrams', i18nKey: 'fat', goal: (g) => g.fatGrams },
+      { key: 'waterMl', i18nKey: 'water', goal: (g) => g.waterMl },
+    ],
+    [],
+  );
+
+  function formatDate(iso: string): string {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      return iso;
+    }
+    return new Intl.DateTimeFormat(i18n.language).format(date);
+  }
+
+  // Resolve the load-error fallback strings up front so the data-fetch effect
+  // does not depend on `t` (whose identity changes on language switch and would
+  // otherwise trigger a spurious re-fetch). Data fetching is independent of the
+  // active UI language.
+  const profileNotFoundMsg = t('profileNotFound');
+  const profileMissingInfoMsg = t('profileMissingInfo');
+  const unknownErrorMsg = t('unknownError');
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +80,7 @@ export default function GoalsPage() {
       .then((goals) => {
         if (!cancelled) {
           setStatus({ state: 'ready', goals });
-          setOverrides(buildOverrideForm(goals));
+          setOverrides(buildOverrideForm(OVERRIDE_FIELDS, goals));
         }
       })
       .catch((error: unknown) => {
@@ -68,12 +90,10 @@ export default function GoalsPage() {
         if (error instanceof ApiError && (error.status === 404 || error.status === 409)) {
           const message =
             error.problem?.title ??
-            (error.status === 404
-              ? 'Profile not found.'
-              : 'Your profile is missing some required information.');
+            (error.status === 404 ? profileNotFoundMsg : profileMissingInfoMsg);
           setStatus({ state: 'incomplete', message });
         } else {
-          const message = error instanceof Error ? error.message : 'Unknown error';
+          const message = error instanceof Error ? error.message : unknownErrorMsg;
           setStatus({ state: 'error', message });
         }
       });
@@ -81,11 +101,11 @@ export default function GoalsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [OVERRIDE_FIELDS, profileNotFoundMsg, profileMissingInfoMsg, unknownErrorMsg]);
 
   function applyResult(goals: GoalsResponse) {
     setStatus({ state: 'ready', goals });
-    setOverrides(buildOverrideForm(goals));
+    setOverrides(buildOverrideForm(OVERRIDE_FIELDS, goals));
   }
 
   async function submitOverrides(req: SetGoalOverridesRequest) {
@@ -100,9 +120,9 @@ export default function GoalsPage() {
     } catch (error: unknown) {
       if (error instanceof ApiError && error.problem?.errors) {
         setFieldErrors(error.problem.errors);
-        setSubmitError(error.problem.title ?? 'Please correct the highlighted fields.');
+        setSubmitError(error.problem.title ?? t('correctFields'));
       } else {
-        const message = error instanceof Error ? error.message : 'Could not save overrides.';
+        const message = error instanceof Error ? error.message : t('saveError');
         setSubmitError(message);
       }
     } finally {
@@ -124,14 +144,14 @@ export default function GoalsPage() {
       const parsed = Number(raw);
       if (Number.isNaN(parsed)) {
         // Reject rather than silently clearing the override on bad input.
-        invalid[field.key] = ['Enter a number, or leave blank to use the computed value.'];
+        invalid[field.key] = [t('invalidNumber')];
         continue;
       }
       req[field.key] = parsed;
     }
     if (Object.keys(invalid).length > 0) {
       setSaved(false);
-      setSubmitError('Please correct the highlighted fields.');
+      setSubmitError(t('correctFields'));
       setFieldErrors(invalid);
       return;
     }
@@ -157,8 +177,8 @@ export default function GoalsPage() {
   if (status.state === 'loading') {
     return (
       <section>
-        <h1>Goals</h1>
-        <p>Loading your goals…</p>
+        <h1>{t('title')}</h1>
+        <p>{t('loading')}</p>
       </section>
     );
   }
@@ -166,11 +186,10 @@ export default function GoalsPage() {
   if (status.state === 'incomplete') {
     return (
       <section>
-        <h1>Goals</h1>
+        <h1>{t('title')}</h1>
         <p className="message message-info">{status.message}</p>
         <p>
-          Complete your profile to see your personalised goals.{' '}
-          <Link to="/profile">Complete your profile</Link>
+          {t('incompleteBody')} <Link to="/profile">{t('completeProfileLink')}</Link>
         </p>
       </section>
     );
@@ -179,9 +198,9 @@ export default function GoalsPage() {
   if (status.state === 'error') {
     return (
       <section>
-        <h1>Goals</h1>
+        <h1>{t('title')}</h1>
         <p role="alert" className="message message-error">
-          Could not load your goals — {status.message}
+          {t('loadError', { message: status.message })}
         </p>
       </section>
     );
@@ -189,49 +208,51 @@ export default function GoalsPage() {
 
   const { goals } = status;
 
-  const cards: { label: string; unit: string; goal: GoalValue }[] = [
-    { label: 'Calories', unit: 'kcal', goal: goals.calories },
-    { label: 'Protein', unit: 'g', goal: goals.proteinGrams },
-    { label: 'Carbs', unit: 'g', goal: goals.carbohydrateGrams },
-    { label: 'Fat', unit: 'g', goal: goals.fatGrams },
-    { label: 'Water', unit: 'ml', goal: goals.waterMl },
+  const cards: { id: string; label: string; unit: string; goal: GoalValue }[] = [
+    { id: 'calories', label: t('calories'), unit: t('units.kcal'), goal: goals.calories },
+    { id: 'protein', label: t('protein'), unit: t('units.g'), goal: goals.proteinGrams },
+    { id: 'carbs', label: t('carbs'), unit: t('units.g'), goal: goals.carbohydrateGrams },
+    { id: 'fat', label: t('fat'), unit: t('units.g'), goal: goals.fatGrams },
+    { id: 'water', label: t('water'), unit: t('units.ml'), goal: goals.waterMl },
   ];
 
   return (
     <section>
-      <h1>Goals</h1>
+      <h1>{t('title')}</h1>
 
       <ul className="goal-cards">
         {cards.map((card) => (
-          <li key={card.label} className="card goal-card">
+          <li key={card.id} className="card goal-card">
             <h2>{card.label}</h2>
             <p className="goal-value">
               {card.goal.value}
               <span className="goal-unit"> {card.unit}</span>
             </p>
             {card.goal.isOverridden && (
-              <p className="goal-computed">(computed: {card.goal.computed})</p>
+              <p className="goal-computed">{t('computed', { value: card.goal.computed })}</p>
             )}
           </li>
         ))}
       </ul>
 
+      {/* Preserve the <strong> structure (and the · separator) so existing
+          tests querying /BMR/ and the bold numbers keep matching. */}
       <p className="goal-energy">
-        BMR <strong>{goals.bmr}</strong> kcal · TDEE <strong>{goals.tdee}</strong> kcal
+        {t('bmrLabel')} <strong>{goals.bmr}</strong> {t('units.kcal')}
+        {t('energySeparator')}
+        {t('tdeeLabel')} <strong>{goals.tdee}</strong> {t('units.kcal')}
       </p>
       {goals.lastOverriddenAt && (
-        <p className="hint">Last overridden {formatDate(goals.lastOverriddenAt)}</p>
+        <p className="hint">{t('lastOverridden', { date: formatDate(goals.lastOverriddenAt) })}</p>
       )}
 
-      <h2>Customise your targets</h2>
-      <p className="hint">Leave a field blank to use the computed value for that target.</p>
+      <h2>{t('customiseTitle')}</h2>
+      <p className="hint">{t('customiseHint')}</p>
       <form onSubmit={handleSubmit} noValidate>
         <div className="form-grid">
           {OVERRIDE_FIELDS.map((field) => (
             <div className="form-field" key={field.key}>
-              <label htmlFor={`override-${field.key}`}>
-                {field.label} ({field.unit})
-              </label>
+              <label htmlFor={`override-${field.key}`}>{t(`override.${field.i18nKey}`)}</label>
               <input
                 id={`override-${field.key}`}
                 name={field.key}
@@ -254,13 +275,13 @@ export default function GoalsPage() {
         )}
         {saved && !submitError && (
           <p role="status" className="message message-success">
-            Overrides saved.
+            {t('saved')}
           </p>
         )}
 
         <div className="form-actions">
           <button type="submit" disabled={saving}>
-            {saving ? 'Saving…' : 'Save overrides'}
+            {saving ? t('saving') : t('saveButton')}
           </button>
           <button
             type="button"
@@ -268,7 +289,7 @@ export default function GoalsPage() {
             onClick={handleReset}
             disabled={saving}
           >
-            Reset to computed
+            {t('resetButton')}
           </button>
         </div>
       </form>

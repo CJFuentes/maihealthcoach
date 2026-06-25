@@ -1,11 +1,12 @@
+import { useTranslation } from 'react-i18next';
+
 export default function AboutPage() {
+  const { t } = useTranslation('about');
+
   return (
     <section>
-      <h1>About</h1>
-      <p>
-        MAI Health Coach is your personal health companion — track your nutrition, hydration, and
-        activity, and get coaching guidance along the way.
-      </p>
+      <h1>{t('title')}</h1>
+      <p>{t('body')}</p>
     </section>
   );
 }

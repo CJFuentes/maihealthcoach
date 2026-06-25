@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 
 interface BarcodeScannerProps {
@@ -18,13 +19,14 @@ interface BarcodeScannerProps {
  * `onDetected` with the barcode text and stops the camera.
  */
 export default function BarcodeScanner({ onDetected, disabled = false }: BarcodeScannerProps) {
+  const { t } = useTranslation('scan');
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { state, error, start, stop } = useBarcodeScanner(videoRef, onDetected);
 
   if (state === 'unsupported') {
     return (
       <p className="hint" role="status">
-        No camera is available in this browser. Enter the barcode manually below.
+        {t('noCamera')}
       </p>
     );
   }
@@ -38,14 +40,14 @@ export default function BarcodeScanner({ onDetected, disabled = false }: Barcode
         <video
           ref={videoRef}
           className="scanner-video"
-          aria-label="Barcode camera preview"
+          aria-label={t('cameraPreviewLabel')}
           hidden={!isActive}
           muted
           playsInline
         />
         {!isActive && (
           <div className="scanner-placeholder" aria-hidden="true">
-            Camera off
+            {t('cameraOff')}
           </div>
         )}
       </div>
@@ -53,20 +55,23 @@ export default function BarcodeScanner({ onDetected, disabled = false }: Barcode
       <div className="scanner-controls">
         {isActive ? (
           <button type="button" onClick={stop}>
-            Stop camera
+            {t('stopCamera')}
           </button>
         ) : (
           <button type="button" onClick={() => void start()} disabled={disabled}>
-            {state === 'error' ? 'Retry camera' : 'Scan with camera'}
+            {state === 'error' ? t('retryCamera') : t('scanWithCamera')}
           </button>
         )}
         {state === 'scanning' && (
           <span className="scanner-status" role="status">
-            Point your camera at a barcode…
+            {t('pointCamera')}
           </span>
         )}
       </div>
 
+      {/* TODO(i18n): return error code enum; translate in BarcodeScanner.
+          The hook (useBarcodeScanner) currently produces English error strings
+          directly; once it returns a code, map it through t('cameraErrors.*'). */}
       {error && (
         <p role="alert" className="message message-error">
           {error}

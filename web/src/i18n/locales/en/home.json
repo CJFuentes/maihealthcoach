@@ -1,0 +1,6 @@
+{
+  "title": "MAI Health Coach",
+  "checking": "Checking backend…",
+  "online": "Backend online — {{service}} v{{version}}",
+  "unavailable": "Backend unavailable — {{message}}"
+}

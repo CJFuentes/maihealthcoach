@@ -176,6 +176,10 @@ export default function AddEntryDialog({
   }
 
   return (
+    // The native <dialog> is keyboard-dismissable via Escape (handled by onClose);
+    // this click handler only adds backdrop-click-to-close, so a redundant key
+    // listener would add no real accessibility value.
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/click-events-have-key-events
     <dialog
       ref={dialogRef}
       className="diary-dialog"

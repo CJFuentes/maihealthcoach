@@ -10,6 +10,7 @@ import type goals from './locales/en/goals.json';
 import type scan from './locales/en/scan.json';
 import type auth from './locales/en/auth.json';
 import type coach from './locales/en/coach.json';
+import type water from './locales/en/water.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -24,6 +25,7 @@ declare module 'i18next' {
       scan: typeof scan;
       auth: typeof auth;
       coach: typeof coach;
+      water: typeof water;
     };
   }
 }

@@ -9,6 +9,7 @@ import WaterPage from './pages/WaterPage';
 import ExercisePage from './pages/ExercisePage';
 import ScanPage from './pages/ScanPage';
 import CoachPage from './pages/CoachPage';
+import TrendsPage from './pages/TrendsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="exercise" element={<ExercisePage />} />
           <Route path="scan" element={<ScanPage />} />
           <Route path="coach" element={<CoachPage />} />
+          <Route path="trends" element={<TrendsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>

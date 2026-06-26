@@ -1,6 +1,8 @@
+using MAIHealthCoach.Application.Account;
 using MAIHealthCoach.Application.Coaching;
 using MAIHealthCoach.Application.Food;
 using MAIHealthCoach.Application.Notifications;
+using MAIHealthCoach.Infrastructure.Account;
 using MAIHealthCoach.Infrastructure.Auth;
 using MAIHealthCoach.Infrastructure.Coaching;
 using MAIHealthCoach.Infrastructure.Configuration;
@@ -45,6 +47,8 @@ public static class DependencyInjection
 
         services.AddPushNotificationServices();
 
+        services.AddAccountServices();
+
         return services;
     }
 
@@ -62,6 +66,18 @@ public static class DependencyInjection
     {
         services.TryAddSingleton<IPushNotificationSender, LoggingPushNotificationSender>();
         services.AddHostedService<PushReminderBackgroundService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the account-management services — currently the
+    /// <see cref="IAccountDeletionService"/> implementation that erases a user and all owned data
+    /// for the GDPR "right to erasure" (issue #46).
+    /// </summary>
+    public static IServiceCollection AddAccountServices(this IServiceCollection services)
+    {
+        services.AddScoped<IAccountDeletionService, AccountDeletionService>();
 
         return services;
     }

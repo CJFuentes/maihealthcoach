@@ -31,13 +31,13 @@
     <ProjectReference Include="..\Infrastructure\MAIHealthCoach.Infrastructure.csproj" />
   </ItemGroup>
   <!-- Embed the canonical privacy policy (issue #46) so GET /api/v1/privacy-policy serves it from
-       memory. The docs file is the single source of truth (no copy/duplication); the stable
-       LogicalName is what PrivacyPolicyEndpoints.LoadPolicy() looks up. Path: Api -> src -> backend
-       -> repo root -> docs (three levels up). -->
+       memory. The resource lives INSIDE the Api project (Resources/PrivacyPolicy.md) so it is present
+       in the container build context — the Containerfile copies backend/ only, so a docs/ path three
+       levels up is unavailable during `dotnet publish` in the image. docs/privacy-policy.md mirrors
+       this file for human readers. The stable LogicalName is what PrivacyPolicyEndpoints.LoadPolicy() looks up. -->
   <ItemGroup>
-    <EmbeddedResource Include="..\..\..\docs\privacy-policy.md">
+    <EmbeddedResource Include="Resources\PrivacyPolicy.md">
       <LogicalName>MAIHealthCoach.Api.Resources.PrivacyPolicy.md</LogicalName>
-      <Link>Resources\PrivacyPolicy.md</Link>
     </EmbeddedResource>
   </ItemGroup>
 </Project>

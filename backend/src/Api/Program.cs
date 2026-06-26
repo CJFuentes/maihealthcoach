@@ -7,7 +7,9 @@ using MAIHealthCoach.Api.Features.Exercise;
 using MAIHealthCoach.Api.Features.Exercises;
 using MAIHealthCoach.Api.Features.Foods;
 using MAIHealthCoach.Api.Features.Goals;
+using MAIHealthCoach.Api.Features.Me;
 using MAIHealthCoach.Api.Features.Notifications;
+using MAIHealthCoach.Api.Features.Privacy;
 using MAIHealthCoach.Api.Features.Profile;
 using MAIHealthCoach.Api.Features.Streaks;
 using MAIHealthCoach.Api.Features.Summary;
@@ -261,6 +263,13 @@ try
     // /api/v1/me/reminder-preferences — meal/water reminder schedule, quiet hours, and UTC offset
     // consumed by the push-reminder background sweep.
     v1.MapReminderPreferencesEndpoints();
+
+    // Account management + GDPR (issue #46): GET /api/v1/me/data-export (portability),
+    // DELETE /api/v1/me (erasure of the user + all owned data).
+    v1.MapMeAccountEndpoints();
+
+    // Privacy policy (issue #46): anonymous GET /api/v1/privacy-policy.
+    v1.MapPrivacyPolicyEndpoints();
 
     // Diagnostic endpoint that deliberately throws, used to exercise the global
     // exception handler. Available in Development, or when explicitly opted in via the
